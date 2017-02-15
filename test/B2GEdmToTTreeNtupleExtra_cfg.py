@@ -545,36 +545,35 @@ process.extraVar = cms.EDProducer("B2GEdmExtraVarProducer",
     ),
 )
 
-### Filter - Select only events with at least 1 AK8 jet with pt>300
-# Filter for MiniAOD Jet collections
-process.PtMinAK8JetCountFilter = cms.EDFilter("PatJetCountFilter", # This one works on MiniAOD
+### Filter - Selects events with at least one muon with pt>20, |eta|<3.0
+process.MuonCountFilter = cms.EDFilter("PatMuonCountFilter", 
     filter = cms.bool(True),
-    src = cms.InputTag("slimmedJetsAK8"),
-    cut = cms.string("pt>300"),
+    src = cms.InputTag("slimmedMuons"),
+    cut = cms.string("pt>20. && abs(eta)<3.0"),
     minNumber = cms.uint32(1)
+)
+### Filter - Selects events with at least one electron with pt>20, |eta|<3.0
+process.ElectronCountFilter = cms.EDFilter("PatElectronCountFilter", 
+    filter = cms.bool(True),
+    src = cms.InputTag("slimmedElectrons"),
+    cut = cms.string("pt>20. && abs(eta)<3.0"),
+    minNumber = cms.uint32(1)
+)
+### Filter - Select only events with at least 1 AK4 jet with pt>20 and |eta|<3.0
+process.LeadingJetCountFilter = cms.EDFilter("PatJetCountFilter",  
+    filter = cms.bool(True),
+    src = cms.InputTag("slimmedJets"),
+    cut = cms.string("pt>20. && abs(eta)<3.0"),
+    minNumber = cms.uint32(1)
+)
+### Filter - Select only events with at least 2 AK4 jets with pt>20 and |eta|<3.0
+process.SubleadingJetCountFilter = cms.EDFilter("PatJetCountFilter",  
+    filter = cms.bool(True),
+    src = cms.InputTag("slimmedJets"),
+    cut = cms.string("pt>10. && abs(eta)<3.0"),
+    minNumber = cms.uint32(2)
 )
 
-# Filter For Edm ntuple - Use this here
-#process.EdmNtupleCountFilter = cms.EDFilter("EdmNtupleCountFilter", # This one works on EdmNtuple
-#    filter = cms.bool(True), # False also filters for some reason (disable in Path instead)
-#    src = cms.InputTag(AK8_label,AK8_prefix+"Pt"),
-#    #min = cms.double(350),
-#    #minNumber = cms.uint32(2)
-#    min = cms.double(150),
-#    minNumber = cms.uint32(1)
-#)
-process.Min3AK4JetFilter = cms.EDFilter("EdmNtupleCountFilter", # This one works on EdmNtuple
-    filter = cms.bool(True), # False also filters for some reason (disable in Path instead)
-    src = cms.InputTag(AK4_label,AK4_prefix+"Pt"),
-    min = cms.double(0),
-    minNumber = cms.uint32(3)
-)
-process.Min1AK8JetFilter = cms.EDFilter("EdmNtupleCountFilter", # This one works on EdmNtuple
-    filter = cms.bool(True), # False also filters for some reason (disable in Path instead)
-    src = cms.InputTag(AK8_label,AK8_prefix+"Pt"),
-    min = cms.double(0),
-    minNumber = cms.uint32(1)
-)
 if genHtFilter:
     process.GenHtFilter = cms.EDFilter("SingleFloatFilter",
         src = cms.InputTag("extraVar","evtGenHt"),
@@ -606,9 +605,17 @@ process.EventCounter = cms.EDAnalyzer("EventCounter",
 )
 
 # Paths
-process.analysisPath = cms.Path(
+process.analysisPathMuon = cms.Path(
     process.extraVar *
     process.EventCounter *
-    #process.Min3AK4JetFilter *
-    #process.Min1AK8JetFilter *
+    process.MuonCountFilter * #muon filter
+    process.LeadingJetCountFilter * #leading jet filter
+    process.SubleadingJetCountFilter * #subleading jet filter
+    process.B2GTTreeMaker)
+process.analysisPathElectron = cms.Path(
+    process.extraVar *
+    process.EventCounter *
+    process.ElectronCountFilter * #electron filter
+    process.LeadingJetCountFilter * #leading jet filter
+    process.SubleadingJetCountFilter * #subleading jet filter
     process.B2GTTreeMaker)
