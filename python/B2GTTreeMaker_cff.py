@@ -101,8 +101,8 @@ else:
         #"Px",
         #"Py",
         "Phi",
-        #"uncorPt",
-        #"uncorPhi",
+        "uncorPt",
+        "uncorPhi",
         #"uncorSumEt",
     )
     metFull_var      = copy.deepcopy(metNoHF_var)
