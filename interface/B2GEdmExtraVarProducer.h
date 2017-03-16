@@ -18,6 +18,9 @@
 #include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 
+//Lorentz rotation
+#include "TLorentzRotation.h"
+
 #include <fstream>
 
 class  B2GEdmExtraVarProducer : public edm::EDProducer {

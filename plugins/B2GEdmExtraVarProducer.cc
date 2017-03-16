@@ -622,6 +622,151 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
     }
     
     size_t ngen =  h_floats_["gen_Pt"]->size();
+    TLorentzVector b1, b2, q_vec, qbar_vec, t_vec, tbar_vec;
+    bool found_first_parton = false;
+    float lepID = 0;
+    float first_b_ID = 0;
+    //Find MC truth variables
+    //std::cout << "------------------------------\n"; //DEBUG
+    for (size_t i=0; i<ngen; ++i) {
+      //Get all the relevant stuff
+      float thisID = h_floats_["gen_ID"]->at(i);
+      float Mom0ID = h_floats_["gen_Mom0ID"]->at(i);
+      float Mom1ID = h_floats_["gen_Mom1ID"]->at(i);
+      float Dau0ID = h_floats_["gen_Dau0ID"]->at(i);
+      float Dau1ID = h_floats_["gen_Dau1ID"]->at(i);
+    //  std::cout<<"["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+      //Initial partons
+      if (Mom1ID==-900. && abs(Dau0ID)==6 && abs(Dau1ID)==6) {
+        //first parton
+        if (!found_first_parton) {
+    //      std::cout << "found first initial parton\n"; //DEBUG
+          single_float_["MC_part1_factor"] = (h_floats_["gen_Eta"]->at(i)>0) ? 1.0 : -1.0;
+          single_float_["MC_part1_ID"]=thisID;
+          found_first_parton=true;
+          q_vec=TLorentzVector(1.0,0.0,(abs(thisID)/thisID)*single_float_["MC_part1_factor"]*sqrt(13000.*13000. - 1.*1.),13000.);
+          qbar_vec=TLorentzVector(1.0,0.0,-1.*(abs(thisID)/thisID)*single_float_["MC_part1_factor"]*sqrt(13000.*13000. - 1.*1.),13000.);
+        }
+        //second parton
+        else {
+    //      std::cout << "found second initial parton\n"; //DEBUG
+          single_float_["MC_part2_factor"] = (h_floats_["gen_Eta"]->at(i)>0) ? 1.0 : -1.0;
+          single_float_["MC_part2_ID"]=thisID;
+        }
+      }
+      //top
+      else if (thisID == 6 && Mom0ID==thisID && (Dau0ID==5 || Dau1ID==5) && (Dau0ID==24 || Dau1ID==24)) {
+        t_vec.SetPtEtaPhiE(h_floats_["gen_Pt"]->at(i), h_floats_["gen_Eta"]->at(i), h_floats_["gen_Phi"]->at(i), h_floats_["gen_E"]->at(i));
+        single_float_["MC_t_pt"]=t_vec.Pt();
+        single_float_["MC_t_eta"]=t_vec.Eta();
+        single_float_["MC_t_phi"]=t_vec.Phi();
+        single_float_["MC_t_E"]=t_vec.E();
+      }
+      //antitop
+      else if (thisID == -6 && Mom0ID==thisID && (Dau0ID==-5 || Dau1ID==-5) && (Dau0ID==-24 || Dau1ID==-24)) {
+        tbar_vec.SetPtEtaPhiE(h_floats_["gen_Pt"]->at(i), h_floats_["gen_Eta"]->at(i), h_floats_["gen_Phi"]->at(i), h_floats_["gen_E"]->at(i));
+        single_float_["MC_tbar_pt"]=tbar_vec.Pt();
+        single_float_["MC_tbar_eta"]=tbar_vec.Eta();
+        single_float_["MC_tbar_phi"]=tbar_vec.Phi();
+        single_float_["MC_tbar_E"]=tbar_vec.E();
+      }
+      //lepton and neutrino
+      else if (abs(Mom0ID)==24 && abs(thisID)>10 && abs(thisID)<19) { //lepton IDs are 11-18
+        //std::cout<<"["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+        if (abs(thisID)%2==1) { //electron, muon, or tau
+        //  std::cout<<"lepton\n" //DEBUG
+          single_float_["MC_lep_pt"]=h_floats_["gen_Pt"]->at(i);
+          single_float_["MC_lep_eta"]=h_floats_["gen_Eta"]->at(i);
+          single_float_["MC_lep_phi"]=h_floats_["gen_Phi"]->at(i);
+          single_float_["MC_lep_E"]=h_floats_["gen_E"]->at(i);
+          lepID=h_floats_["gen_ID"]->at(i);
+          single_float_["MC_lep_ID"]=lepID;
+        }
+        else {
+        //  std::cout<<"neutrino\n" //DEBUG
+          single_float_["MC_nu_pt"]=h_floats_["gen_Pt"]->at(i);
+          single_float_["MC_nu_eta"]=h_floats_["gen_Eta"]->at(i);
+          single_float_["MC_nu_phi"]=h_floats_["gen_Phi"]->at(i);
+          single_float_["MC_nu_E"]=h_floats_["gen_E"]->at(i);
+        }
+      }
+      //hadronic W
+      else if ((abs(Mom0ID)==24 || abs(Mom0ID)==6) && thisID==24 && (abs(Dau0ID)<11 || abs(Dau0ID)>18) && (abs(Dau1ID)<11 || abs(Dau1ID)>18)) {
+        single_float_["MC_hadW_pt"]=h_floats_["gen_Pt"]->at(i);
+        single_float_["MC_hadW_eta"]=h_floats_["gen_Eta"]->at(i);
+        single_float_["MC_hadW_phi"]=h_floats_["gen_Phi"]->at(i);
+        single_float_["MC_hadW_E"]=h_floats_["gen_E"]->at(i);
+      }
+      //bs from tops
+      else if (abs(Mom0ID)==6 and abs(thisID)==5) {
+        if (first_b_ID==0) {
+          b1.SetPtEtaPhiE(h_floats_["gen_Pt"]->at(i), h_floats_["gen_Eta"]->at(i), h_floats_["gen_Phi"]->at(i), h_floats_["gen_E"]->at(i));
+          first_b_ID = h_floats_["gen_ID"]->at(i);
+        }
+        else {
+          b2.SetPtEtaPhiE(h_floats_["gen_Pt"]->at(i), h_floats_["gen_Eta"]->at(i), h_floats_["gen_Phi"]->at(i), h_floats_["gen_E"]->at(i));
+        }
+      }
+    }
+    //And set the bs now that the other particles are all decided (well, if they're all decided)
+    if (lepID!=0 && single_float_["MC_hadW_pt"]!=-9999.) {
+      if ((first_b_ID/lepID)>0) {
+        single_float_["MC_lepb_pt"]=b1.Pt();
+        single_float_["MC_lepb_eta"]=b1.Eta();
+        single_float_["MC_lepb_phi"]=b1.Phi();
+        single_float_["MC_lepb_E"]=b1.E();
+        single_float_["MC_hadb_pt"]=b2.Pt();
+        single_float_["MC_hadb_eta"]=b2.Eta();
+        single_float_["MC_hadb_phi"]=b2.Phi();
+        single_float_["MC_hadb_E"]=b2.E();
+      }
+      else {
+        single_float_["MC_hadb_pt"]=b1.Pt();
+        single_float_["MC_hadb_eta"]=b1.Eta();
+        single_float_["MC_hadb_phi"]=b1.Phi();
+        single_float_["MC_hadb_E"]=b1.E();
+        single_float_["MC_lepb_pt"]=b2.Pt();
+        single_float_["MC_lepb_eta"]=b2.Eta();
+        single_float_["MC_lepb_phi"]=b2.Phi();
+        single_float_["MC_lepb_E"]=b2.E();
+      }
+    }
+    //Calculate MC truth observables
+    //initialize the rotation to the identity
+    TLorentzRotation* R = new TLorentzRotation();
+    //Make the 4-vector of the ttbar pair, get its mass, calculate x_F
+    TLorentzVector Q = t_vec+tbar_vec;
+    double ttbar_mass=Q.Mag();
+    single_float_["MC_Mtt"]=ttbar_mass;
+    single_float_["MC_x_F"] = 2*Q.Pz()/13000.;
+    //defining the Px, Py,and Pz, and energies to boost into the ttbar rest frame
+    double Bx = -1*Q.Px()/Q.E(); 
+    double By = -1*Q.Py()/Q.E(); 
+    double Bz = -1*Q.Pz()/Q.E();
+    //Doing the boost
+    *R = R->Boost(Bx,By,Bz);
+    t_vec = (*R)*t_vec; tbar_vec = (*R)*tbar_vec;
+    q_vec = (*R)*q_vec; qbar_vec = (*R)*qbar_vec;
+    //Define normalized three-vectors for the top and protons in the ttbar rest frame
+    TVector3 top = t_vec.Vect(); 
+    TVector3 q = q_vec.Vect(); 
+    TVector3 qbar = qbar_vec.Vect(); 
+    //Normalize vectors (and flip the qbar direction)
+    if (single_float_["MC_part1_ID"]+single_float_["MC_part2_ID"]!=0 && q.Mag()>qbar.Mag()) {
+      top = top*(1.0/top.Mag()); 
+      q = -1.0*q*(1.0/q.Mag()); 
+      qbar = qbar*(1.0/qbar.Mag());
+    }
+    else {
+      top = top*(1.0/top.Mag()); 
+      q = q*(1.0/q.Mag()); 
+      qbar = -1.0*qbar*(1.0/qbar.Mag());
+    }
+    //find the unit bisectors
+    TVector3 bisector = (q+qbar)*(1.0/(q+qbar).Mag());
+    //find the CS angle
+    single_float_["MC_cstar"]=cos(top.Angle(bisector));
+
     double stop_mass = -9999, gluino_mass = -9999, lsp_mass = -9999;
     for (size_t i=0; i<ngen; ++i) {
       // Only saving b,t,W,l,nu
@@ -643,21 +788,22 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
         vector_float_["gen_Phi"].push_back(h_floats_["gen_Phi"]->at(i));			    /* gen_Phi */
         vector_float_["gen_E"].push_back(h_floats_["gen_E"]->at(i));				    /* gen_E */
         vector_float_["gen_Charge"].push_back(h_floats_["gen_Charge"]->at(i));			    /* gen_Charge */
-        TLorentzVector genp; genp.SetPtEtaPhiE(h_floats_["gen_Pt"]->at(i), h_floats_["gen_Eta"]->at(i),
-					       h_floats_["gen_Phi"]->at(i), h_floats_["gen_E"]->at(i));
-	vector_float_["gen_Mass"].push_back(genp.M());				                    /* gen_Mass */
-	if (abs(h_floats_["gen_ID"]->at(i))==1000006||abs(h_floats_["gen_ID"]->at(i))==2000006) {
-	  // Stop Mass
-	  stop_mass = std::round(genp.M());
-	} else if (abs(h_floats_["gen_ID"]->at(i))==1000021) {
-	  // Gluino Mass is needef for cross-section
-	  // round because there's a small precision loss
-	  // and also for xsec you need to round anyway
-	  gluino_mass = std::round(genp.M()/5)*5;
-	} else if (abs(h_floats_["gen_ID"]->at(i))==1000022) {
-	  // LSP Mass
-	  lsp_mass = std::round(genp.M()/5)*5;
-	}
+        TLorentzVector genp; genp.SetPtEtaPhiE(h_floats_["gen_Pt"]->at(i), h_floats_["gen_Eta"]->at(i), h_floats_["gen_Phi"]->at(i), h_floats_["gen_E"]->at(i));
+        vector_float_["gen_Mass"].push_back(genp.M());				                    /* gen_Mass */
+        if (abs(h_floats_["gen_ID"]->at(i))==1000006||abs(h_floats_["gen_ID"]->at(i))==2000006) {
+          // Stop Mass
+          stop_mass = std::round(genp.M());
+        } 
+        else if (abs(h_floats_["gen_ID"]->at(i))==1000021) {
+          // Gluino Mass is needef for cross-section
+          // round because there's a small precision loss
+          // and also for xsec you need to round anyway
+          gluino_mass = std::round(genp.M()/5)*5;
+        } 
+        else if (abs(h_floats_["gen_ID"]->at(i))==1000022) {
+          // LSP Mass
+          lsp_mass = std::round(genp.M()/5)*5;
+        }
       }
       if (!useGenParticles&&h_floats_["gen_Pt"]->at(i)>0) {
         TLorentzVector genp; genp.SetPtEtaPhiE(h_floats_["gen_Pt"]->at(i), h_floats_["gen_Eta"]->at(i),
@@ -669,17 +815,17 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
             gen_top_ID.push_back(h_floats_["gen_ID"]->at(i));
           }
           if (abs(h_floats_["gen_ID"]->at(i))==5&&abs(h_floats_["gen_Mom0ID"]->at(i))==6) {
-	    if (abs(h_floats_["gen_ID"]->at(i))==1) {
-	      gen_q_from_top.push_back(genp);
-	      gen_b_from_top.push_back(0);
-	    } else if (abs(h_floats_["gen_ID"]->at(i))==3) {
-	      gen_q_from_top.push_back(genp);
-	      gen_b_from_top.push_back(0);
-	    } else if (abs(h_floats_["gen_ID"]->at(i))==5) {
-	      gen_q_from_top.push_back(genp);
-	      gen_b_from_top.push_back(1);
-	    }
-	  }
+            if (abs(h_floats_["gen_ID"]->at(i))==1) {
+              gen_q_from_top.push_back(genp);
+              gen_b_from_top.push_back(0);
+            } else if (abs(h_floats_["gen_ID"]->at(i))==3) {
+              gen_q_from_top.push_back(genp);
+              gen_b_from_top.push_back(0);
+            } else if (abs(h_floats_["gen_ID"]->at(i))==5) {
+              gen_q_from_top.push_back(genp);
+              gen_b_from_top.push_back(1);
+            }
+          }
           if (abs(h_floats_["gen_ID"]->at(i))==24&&abs(h_floats_["gen_Mom0ID"]->at(i))==6) {
             gen_W_from_top.push_back(genp);
             gen_W_from_top_ID.push_back(h_floats_["gen_ID"]->at(i));
@@ -694,7 +840,8 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
             gen_neu_from_W.push_back(genp);
             gen_neu_from_W_ID.push_back(h_floats_["gen_ID"]->at(i));
           }
-        } else if (h_floats_["gen_ID"]->at(i)==h_floats_["gen_Mom0ID"]->at(i)&&abs(h_floats_["gen_ID"]->at(i))==6) {
+        } 
+        else if (h_floats_["gen_ID"]->at(i)==h_floats_["gen_Mom0ID"]->at(i)&&abs(h_floats_["gen_ID"]->at(i))==6) {
           // tops emit particles and we have to match consecutive tops to the original one
           size_t t=0, t_m_dR = -1, t_m_dE = -1;
           double min_dE = 9999, min_dR = 9999;
