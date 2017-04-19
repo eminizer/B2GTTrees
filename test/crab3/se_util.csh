@@ -43,18 +43,22 @@ end
 set USERNAME=`whoami`
 # Add your site srm paths here
 set SITE_INFO=( \
-    "T1_US_FNAL"      "srm://cmssrm.fnal.gov:8443/srm/managerv2"          "SFN=/" \
+#    "T1_US_FNAL"      "srm://cmssrm.fnal.gov:8443/srm/managerv2"          "SFN=/" \
     "T1_US_FNAL_Disk" "srm://cmsdcadisk01.fnal.gov:8443/srm/managerv2"    "SFN=/dcache/uscmsdisk/" \
-    "T3_US_FNALLPC"   "srm://cmseos.fnal.gov:8443/srm/v2/server"          "SFN=/" \
-    "T2_IT_Rome"      "srm://cmsrm-se01.roma1.infn.it:8443/srm/managerv2" "SFN=/pnfs/roma1.infn.it/data/cms/" \
+#    "T3_US_FNALLPC"   "srm://cmseos.fnal.gov:8443/srm/v2/server"          "SFN=/" \
+#    "T2_IT_Rome"      "srm://cmsrm-se01.roma1.infn.it:8443/srm/managerv2" "SFN=/pnfs/roma1.infn.it/data/cms/" \
     "T2_DE_DESY"      "srm://dcache-se-cms.desy.de:8443/srm/managerv2"    "SFN=/pnfs/desy.de/cms/tier2/" \
-    "T2_CH_CERN"      "srm://srm-eoscms.cern.ch:8443/srm/v2/server"       "SFN=/eos/cms/" \
+    "T2_CH_CERN"      "gsiftp://eoscmsftp.cern.ch"                        "/eos/cms/" \
+    "T2_RU_JINR"      "srm://lcgsedc01.jinr.ru:8443/srm/managerv2"        "SFN=/pnfs/jinr.ru/data/cms/" \
     "T2_HU_Budapest"  "srm://grid143.kfki.hu:8446/srm/managerv2"          "SFN=/dpm/kfki.hu/home/cms/phedex/" \
-    "T3_HU_Debrecen"  "srm://grid143.kfki.hu:8446"                        "/dpm/kfki.hu/home/cms/phedex/" \
+#    "T3_HU_Debrecen"  "srm://grid143.kfki.hu:8446"                        "/dpm/kfki.hu/home/cms/phedex/" \
     "desy"            "srm://dcache-se-cms.desy.de:8443/srm/managerv2"    "SFN=/pnfs/desy.de/cms/tier2/" \
-    "cern"            "srm://srm-eoscms.cern.ch:8443/srm/v2/server"       "SFN=/eos/cms/" \
-    "pixel"           "srm://srm-eoscms.cern.ch:8443/srm/v2/server"       "SFN=/eos/cms/store/group/dpg_tracker_pixel/comm_pixel/" \
-    "caf"             "srm://srm-eoscms.cern.ch:8443/srm/v2/server"       "SFN=/eos/cms/store/caf/user/$USERNAME/" \
+#    "cern"            "srm://srm-eoscms.cern.ch:8443/srm/v2/server"       "SFN=/eos/cms/" \
+#    "pixel"           "srm://srm-eoscms.cern.ch:8443/srm/v2/server"       "SFN=/eos/cms/store/group/dpg_tracker_pixel/comm_pixel/" \
+#    "caf"             "srm://srm-eoscms.cern.ch:8443/srm/v2/server"       "SFN=/eos/cms/store/caf/user/$USERNAME/" \
+    "cern"            "gsiftp://eoscmsftp.cern.ch"                        "/eos/cms/" \
+    "pixel"           "gsiftp://eoscmsftp.cern.ch"                        "/eos/cms/store/group/dpg_tracker_pixel/comm_pixel/" \
+    "caf"             "gsiftp://eoscmsftp.cern.ch"                        "/eos/cms/store/caf/user/$USERNAME/" \
     "kfki"            "srm://grid143.kfki.hu:8446/srm/managerv2"          "SFN=/dpm/kfki.hu/home/cms/phedex/store/user/$USERNAME/" \
     "deb"             "srm://grid143.kfki.hu:8446"                        "/dpm/kfki.hu/home/cms/phedex/" \
 )
@@ -75,7 +79,11 @@ foreach arg ( $rest_args )
         set k=`expr $i \* 3 - 1`
         set l=`expr $i \* 3`
 	set SITE=$SITE_INFO[$j]
-	set PATH="$SITE_INFO[$k]\\?$SITE_INFO[$l]"
+	if ( `echo $SITE_INFO[$k] | grep "gsiftp" | wc -l` ) then
+	    set PATH="$SITE_INFO[$k]$SITE_INFO[$l]"	    
+	else
+	    set PATH="$SITE_INFO[$k]\\?$SITE_INFO[$l]"
+	endif
 	# Check whether you can use eos/rfio commands and set suitable path for commands
         if ( `echo "$arg" | grep $SITE":" | wc -l` ) then
 	    if ( `echo $SITE | grep "cern" | wc -l` && $has_eos == 1 ) then
@@ -88,7 +96,7 @@ foreach arg ( $rest_args )
 	        set use_rfio="1"
 	        setenv DPNS_HOST grid143.kfki.hu
 	        setenv DPM_HOST grid143.kfki.hu
-	        if ( ! ( $cmd =~ "cp"* || $cmd == "dl" || $cmd == "dl_mis" ) ) set PATH=`echo $SITE_INFO[$l] | sed "s;SFN=;;"`
+	        if ( ! ( $cmd =~ "cp"* || $cmd == "dl" || $cmd == "dl_mis" || $cmd == "sync" ) ) set PATH=`echo $SITE_INFO[$l] | sed "s;SFN=;;"`
 	    endif
 	    set arg=`echo "$arg" | sed "s;$SITE\:;$PATH;"`
 	    break
@@ -107,13 +115,14 @@ end
 if ( $use_rfio == 1 ) then
     #alias se-ls        '/usr/bin/rfdir \!* | awk '\''{ print $NF }'\'
     #alias se-ls-l      '/usr/bin/rfdir \!* | awk '\''{ printf "%s %4d %4d %3d %12d %s %s %5s %s\n",$1,$2,$3,$4,$5,$6,$7,$8,$9 }'\'
-    if ( $cmd =~ "cp"* || $cmd == "dl" || $cmd == "dl_mis" ) then
+    if ( $cmd =~ "cp"* || $cmd == "dl" || $cmd == "dl_mis" || $cmd == "sync" ) then
 	#set se_ls='lcg-ls -b -D srmv2 --vo cms'
 	set se_ls='env --unset=LD_LIBRARY_PATH gfal-ls'
+	set se_ls_l='env --unset=LD_LIBRARY_PATH gfal-ls -l'
     else
 	set se_ls='/usr/bin/rfdir'
+	set se_ls_l='/usr/bin/rfdir'
     endif
-    set se_ls_l='/usr/bin/rfdir'
    #set se_cp='/usr/bin/rfcp' # rfcp can not copy from SE to an other SE
     set se_mv='/usr/bin/rfrename'
     set se_rm_r='/usr/bin/rfrm -rf'
@@ -121,39 +130,43 @@ if ( $use_rfio == 1 ) then
     set se_get_perm='/usr/bin/rfstat'
     set se_chmod_664='/usr/bin/rfchmod 664'
     set se_chmod_775='/usr/bin/rfchmod 775'
+else if ( $use_eos == 1 ) then
+    #alias se-ls    'eos ls \!*'
+    #alias se-ls-l  'eos ls -l \!*'
+   #set se_cp='eos cp' # Works and is fast to copy locally, has to specify a local/eos directory
+    set se_ls='eos ls'
+    set se_ls_l='eos ls -l'
+    set se_rm_r='eos rm -r'
+    #set se_mv='eos mv' # there is no known command to move files on EOS on lxplus
+    set se_mkdir='eos mkdir'
+    set se_get_perm='eos stat' # Instead using this flawed command, we do a workaround with ls -l
+    set se_chmod_664='eos chmod 664'
+    set se_chmod_775='eos chmod 775'
 else
-    if ( $use_eos == 1 ) then
-	#alias se-ls    'eos ls \!*'
-	#alias se-ls-l  'eos ls -l \!*'
-       #set se_cp='eos cp' # Works and is fast to copy locally, has to specify a local/eos directory
-	set se_ls='eos ls'
-	set se_ls_l='eos ls -l'
-	set se_rm_r='eos rm -r'
-	#set se_mv='eos mv' # there is no known command to move files on EOS on lxplus
-	set se_mkdir='eos mkdir'
-	set se_get_perm='eos stat' # Instead using this flawed command, we do a workaround with ls -l
-	set se_chmod_664='eos chmod 664'
-	set se_chmod_775='eos chmod 775'
-    else
-	#alias se-ls    'lcg-ls -b -D srmv2 --vo cms \!* | sed "s;/; ;g" | awk '\''{ print $NF }'\'
-	#alias se-ls-l  'lcg-ls -b -D srmv2 --vo cms -l \!* | sed "s;/; ;g" | awk '\''{ printf "%s %4d %4d %3d %12d %12s %s\n",$1,$2,$3,$4,$5,$6,$NF }'\'
-	#set se_ls='lcg-ls -b -D srmv2 --vo cms'
-	#set se_ls_l='lcg-ls -b -D srmv2 --vo cms -l'
-	set se_ls='env --unset=LD_LIBRARY_PATH gfal-ls'
-	set se_ls_l='env --unset=LD_LIBRARY_PATH gfal-ls -l'
-	set se_rm='lcg-del -b -D srmv2 --vo cms -l' # much faster than srmrm
-	set se_rmdir='srmrmdir'
-	set se_mv='srmmv'
-	set se_mkdir='srmmkdir'
-	set se_get_perm='srm-get-permissions'
-	set se_chmod_664='srm-set-permissions -type=CHANGE -group=RW'
-	set se_chmod_775='srm-set-permissions -type=CHANGE -group=RWX'
-    endif
+    #alias se-ls    'lcg-ls -b -D srmv2 --vo cms \!* | sed "s;/; ;g" | awk '\''{ print $NF }'\'
+    #alias se-ls-l  'lcg-ls -b -D srmv2 --vo cms -l \!* | sed "s;/; ;g" | awk '\''{ printf "%s %4d %4d %3d %12d %12s %s\n",$1,$2,$3,$4,$5,$6,$NF }'\'
+    #set se_ls='lcg-ls -b -D srmv2 --vo cms'
+    #set se_ls_l='lcg-ls -b -D srmv2 --vo cms -l'
+    #set se_mkdir='srmmkdir'
+    #set se_mv='srmmv'
+    #set se_get_perm='srm-get-permissions'
+    #set se_chmod_664='srm-set-permissions -type=CHANGE -group=RW'
+    #set se_chmod_775='srm-set-permissions -type=CHANGE -group=RWX'
+    #set se_rm='lcg-del -b -D srmv2 --vo cms -l' # much faster than srmrm
+    set se_ls='env --unset=LD_LIBRARY_PATH gfal-ls'
+    set se_ls_l='env --unset=LD_LIBRARY_PATH gfal-ls -l'
+    set se_mkdir='env --unset=LD_LIBRARY_PATH gfal-mkdir'
+    set se_mv='env --unset=LD_LIBRARY_PATH gfal-rename'
+    set se_get_perm='env --unset=LD_LIBRARY_PATH gfal-stat'
+    set se_chmod_664='env --unset=LD_LIBRARY_PATH gfal-chmod 0664' # did not work on 29/03/17
+    set se_chmod_775='env --unset=LD_LIBRARY_PATH gfal-chmod 0775' # did not work on 29/03/17
+    set se_rm='env --unset=LD_LIBRARY_PATH gfal-rm -r'
+    set se_rmdir='env --unset=LD_LIBRARY_PATH gfal-rm -r'
 endif
 #set se_cp='lcg-cp -b -D srmv2 --vo cms'
 #set se_cp='env -i gfal-copy -p -n 4 -t 86400 -T 86400'
 set se_cp='env --unset=LD_LIBRARY_PATH gfal-copy -r'
-set se_cp_v='$se_cp -v'
+set se_cpv="$se_cp -v"
 #set se2_ls='lcg-ls -b -D srmv2 --vo cms'
 #set se2_ls_l='lcg-ls -b -D srmv2 --vo cms -l'
 set se2_ls='env --unset=LD_LIBRARY_PATH gfal-ls'
@@ -228,7 +241,7 @@ else if ( $cmd == "cp" ) then # specify filename
     peek_or_source "cp_$DATE.csh"
 
 else if ( $cmd == "cp-v" ) then
-    echo "$se_cp_v $arg1 $arg2" >! cp_$DATE.csh
+    echo "$se_cpv $arg1 $arg2" >! cp_$DATE.csh
     peek_or_source "cp_$DATE.csh"
 
 else if ( $cmd == "cplfn" ) then
@@ -372,7 +385,7 @@ else if ( $cmd == "dl_mis" ) then
 	echo "se dl_mis <se_dir> <local_dir>"
     else
 	eval "$se_ls $arg1" >! lsout_$RAND.txt;
-	sed "s;/; ;g" lsout_$RAND.txt | awk '{ print "'"$se_cp_v"' ARG1/"$NF" ARG2/"$NF }' | sed "s;ARG1;$arg1;;s;ARG2;$arg2;;s;?;\\?;g" >! dl_temp_$RAND.csh
+	sed "s;/; ;g" lsout_$RAND.txt | awk '{ print "'"$se_cp"' ARG1/"$NF" ARG2/"$NF }' | sed "s;ARG1;$arg1;;s;ARG2;$arg2;;s;?;\\?;g" >! dl_temp_$RAND.csh
 	sed "s;_[0-9]*_[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.root;\.root;;s;\.root;;;s;_; ;g" lsout_$RAND.txt | awk '{ printf "%d\n",$NF }' >! jobnums_se_$RAND.txt
 	rm lsout_$RAND.txt
 	if ( `echo "$arg2" | grep "srm:" | wc -l` ) then
@@ -396,6 +409,63 @@ else if ( $cmd == "dl_mis" ) then
 	else
 	    peek_or_source "dl_mis_$DATE.csh"
 	endif
+    endif
+
+else if ( $cmd == "sync" ) then
+    if ( $narg < 2 ) then
+	echo "Need more arguments, Use:"
+	echo "se sync <se_dir> <local_dir>"
+    else
+	# Check recursively all files on SE (similar to find)
+	echo "$arg1" >! se_subdirs_$RAND.txt
+	set Ndone=0
+	set Ntotal=0
+	echo -n "" >! unsorted_se_files_$RAND.txt
+	echo -n "" >! local_dirs_$RAND.txt
+	while ( `cat se_subdirs_$RAND.txt | wc -l` )
+	    set curr_dir=`head -1 se_subdirs_$RAND.txt`
+	    sed -i -e "1d" se_subdirs_$RAND.txt
+	    eval "$se_ls_l $curr_dir" >! lsout_$RAND.txt
+	    # Remove the same directory (stupid behaviour of lcg-ls for empty directories)
+	    grep '^d' lsout_$RAND.txt >! dirs_$RAND.txt
+	    if ( -f dirs_clean_$RAND.txt ) rm dirs_clean_$RAND.txt
+	    touch dirs_clean_$RAND.txt
+	    while ( `cat dirs_$RAND.txt | grep '^d' | wc -l` )
+	        set curr=`head -1 dirs_$RAND.txt | awk '{ print $NF }'`
+	        if ( ! `echo "$curr_dir" | grep $curr | wc -l` ) then
+	            head -1 dirs_$RAND.txt >> dirs_clean_$RAND.txt
+	        endif
+	        sed -i -e "1d" dirs_$RAND.txt
+	    end
+	    # Append new subdirs in front
+	    cat dirs_clean_$RAND.txt | sed "s;/; ;g" | awk '{ print $NF }' | sed 's;^;'"$curr_dir/"';;s;\?;\\\?;' >! newsubdirs_$RAND.txt
+	    if ( $Ntotal == 0 ) then
+	        set Ntotal=`cat newsubdirs_$RAND.txt | wc -l`
+	    endif
+	    cat se_subdirs_$RAND.txt >> newsubdirs_$RAND.txt
+	    mv newsubdirs_$RAND.txt se_subdirs_$RAND.txt
+	    rm dirs_$RAND.txt dirs_clean_$RAND.txt
+	    # Append list of root files found
+	    set arg1mod=`echo "$arg1" | sed "s;\\;;"`
+	    grep "\.root" lsout_$RAND.txt | awk '{ print "CURR_DIR/"$NF }' | sed "s;CURR_DIR;$curr_dir;;s;$arg1mod/;;;" >> unsorted_se_files_$RAND.txt
+	    # Append list of directories to create
+	    echo "CURR_DIR" | sed "s;CURR_DIR;$curr_dir;;s;$arg1mod;mkdir -p $arg2;;" >> local_dirs_$RAND.txt
+	end
+	sort unsorted_se_files_$RAND.txt > se_files_$RAND.txt
+	rm se_subdirs_$RAND.txt lsout_$RAND.txt unsorted_se_files_$RAND.txt
+	# Check local directories (First create if needed and look for root files)
+	source local_dirs_$RAND.txt
+	find "$arg2" | sed "s;$arg2/;;;s;$arg2;;" | grep "\.root" | sort > local_files_$RAND.txt
+	# Diff file lists and create directories for copy
+	diff local_files_$RAND.txt se_files_$RAND.txt | grep '^>' | awk '{ print "'"$se_cp"' ARG1/"$NF" ARG2/"$NF }' | sed "s;ARG1;$arg1;;s;ARG2;$arg2;;s;?;\\?;g" > sync_$DATE.sh
+	# Download missing files
+	if ( ! -e sync_$DATE.sh ) then
+	    echo "All files are downloaded already"
+	else
+	    peek_or_source "sync_$DATE.sh"
+	endif
+	# delete temp files
+	rm se_files_$RAND.txt local_files_$RAND.txt
     endif
 
 else if ( $cmd == "dirsize" || $cmd == "ds" ) then

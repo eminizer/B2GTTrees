@@ -134,24 +134,20 @@ if ( `echo $cmd | grep "create" | wc -l` ) then
 	#echo $primary
 	# 2016 Data
 	if ( `echo $PROCESSED_DS_NAME | grep "Run2016[B,C,D]" | wc -l`) then
-	    set DATAPROC="Data_80X_Run2016BCD_23Sep2016"
-	    set JEC_ERA="Spring16_25nsV10All_DATA"
+	    set DATAPROC="Data_80X_Run2016BCD_03Feb2017"
+	    set JEC_ERA="Summer16_23Sep2016AllV4_DATA"
 	    set RUNS="1-999999"
-	else if ( `echo $PROCESSED_DS_NAME | grep "Run2016E" | wc -l`) then
-	    set DATAPROC="Data_80X_Run2016E_23Sep2016"
-	    set JEC_ERA="Spring16_25nsV10All_DATA"
-	    set RUNS="1-999999"
-	else if ( `echo $PROCESSED_DS_NAME | grep "Run2016F" | wc -l`) then
-	    set DATAPROC="Data_80X_Run2016F_23Sep2016"
-	    set JEC_ERA="Spring16_25nsV10All_DATA"
+	else if ( `echo $PROCESSED_DS_NAME | grep "Run2016[E,F]" | wc -l`) then
+	    set DATAPROC="Data_80X_Run2016EF_03Feb2017"
+	    set JEC_ERA="Summer16_23Sep2016AllV4_DATA"
 	    set RUNS="1-999999"
 	else if ( `echo $PROCESSED_DS_NAME | grep "Run2016G" | wc -l`) then
-	    set DATAPROC="Data_80X_Run2016G_23Sep2016"
-	    set JEC_ERA="Spring16_25nsV10All_DATA"
+	    set DATAPROC="Data_80X_Run2016G_03Feb2017"
+	    set JEC_ERA="Summer16_23Sep2016AllV4_DATA"
 	    set RUNS="1-999999"
 	else if ( `echo $PROCESSED_DS_NAME | grep "Run2016H" | wc -l`) then
-	    set DATAPROC="Data_80X_Run2016H_PromptReco"
-	    set JEC_ERA="Spring16_25nsV10All_DATA"
+	    set DATAPROC="Data_80X_Run2016H_03Feb2017"
+	    set JEC_ERA="Summer16_23Sep2016AllV4_DATA"
 	    set RUNS="1-999999"
 	# Spring16 FastSim MC - Only Signal is needed from here
 	else if ( `echo $PROCESSED_DS_NAME | grep "RunIISpring16MiniAODv2.*PUSpring16Fast" | wc -l` ) then
@@ -160,7 +156,7 @@ if ( `echo $cmd | grep "create" | wc -l` ) then
 	else if ( `echo $PROCESSED_DS_NAME | grep "RunIISummer16MiniAODv2" | wc -l` ) then
 	    # FullSim
 	    set DATAPROC="MC_MiniAODv2_80X_Summer16"
-	    set JEC_ERA="Spring16_25nsV10_MC"
+	    set JEC_ERA="Summer16_23Sep2016V4_MC"
 	else
 	    echo "ERROR - Dataset not defined (probably because not using latest): "$DATASET
 	    rm -r $TASKDIR Usage.txt
