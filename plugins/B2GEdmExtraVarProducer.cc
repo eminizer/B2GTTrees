@@ -708,64 +708,68 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
         }
       }
     }
-    //And set the bs now that the other particles are all decided (well, if they're all decided)
-    if (lepID!=0 && single_float_["MC_hadW_pt"]!=-9999.) {
-      if ((first_b_ID/lepID)>0) {
-        single_float_["MC_lepb_pt"]=b1.Pt();
-        single_float_["MC_lepb_eta"]=b1.Eta();
-        single_float_["MC_lepb_phi"]=b1.Phi();
-        single_float_["MC_lepb_E"]=b1.E();
-        single_float_["MC_hadb_pt"]=b2.Pt();
-        single_float_["MC_hadb_eta"]=b2.Eta();
-        single_float_["MC_hadb_phi"]=b2.Phi();
-        single_float_["MC_hadb_E"]=b2.E();
+    //assert that we found what we needed for the rest
+    //std::cout<<"MC top pt = "<<single_float_["MC_t_pt"]<<", MC antitop pt = "<<single_float_["MC_tbar_pt"]<<"\n"; //DEBUG
+    if (single_float_["MC_t_pt"]!=-9999 && single_float_["MC_tbar_pt"]!=-9999) {
+      //Set the bs now that the other particles are all decided (well, if they're all decided)
+      if (lepID!=0 && single_float_["MC_hadW_pt"]!=-9999.) {
+        if ((first_b_ID/lepID)>0) {
+          single_float_["MC_lepb_pt"]=b1.Pt();
+          single_float_["MC_lepb_eta"]=b1.Eta();
+          single_float_["MC_lepb_phi"]=b1.Phi();
+          single_float_["MC_lepb_E"]=b1.E();
+          single_float_["MC_hadb_pt"]=b2.Pt();
+          single_float_["MC_hadb_eta"]=b2.Eta();
+          single_float_["MC_hadb_phi"]=b2.Phi();
+          single_float_["MC_hadb_E"]=b2.E();
+        }
+        else {
+          single_float_["MC_hadb_pt"]=b1.Pt();
+          single_float_["MC_hadb_eta"]=b1.Eta();
+          single_float_["MC_hadb_phi"]=b1.Phi();
+          single_float_["MC_hadb_E"]=b1.E();
+          single_float_["MC_lepb_pt"]=b2.Pt();
+          single_float_["MC_lepb_eta"]=b2.Eta();
+          single_float_["MC_lepb_phi"]=b2.Phi();
+          single_float_["MC_lepb_E"]=b2.E();
+        }
+      }
+      //Calculate MC truth observables
+      //initialize the rotation to the identity
+      TLorentzRotation* R = new TLorentzRotation();
+      //Make the 4-vector of the ttbar pair, get its mass, calculate x_F
+      TLorentzVector Q = t_vec+tbar_vec;
+      double ttbar_mass=Q.Mag();
+      single_float_["MC_Mtt"]=ttbar_mass;
+      single_float_["MC_x_F"] = 2*Q.Pz()/13000.;
+      //defining the Px, Py,and Pz, and energies to boost into the ttbar rest frame
+      double Bx = -1*Q.Px()/Q.E(); 
+      double By = -1*Q.Py()/Q.E(); 
+      double Bz = -1*Q.Pz()/Q.E();
+      //Doing the boost
+      *R = R->Boost(Bx,By,Bz);
+      t_vec = (*R)*t_vec; tbar_vec = (*R)*tbar_vec;
+      q_vec = (*R)*q_vec; qbar_vec = (*R)*qbar_vec;
+      //Define normalized three-vectors for the top and protons in the ttbar rest frame
+      TVector3 top = t_vec.Vect(); 
+      TVector3 q = q_vec.Vect(); 
+      TVector3 qbar = qbar_vec.Vect(); 
+      //Normalize vectors (and flip the qbar direction)
+      if (single_float_["MC_part1_ID"]+single_float_["MC_part2_ID"]!=0 && q.Mag()>qbar.Mag()) {
+        top = top*(1.0/top.Mag()); 
+        q = -1.0*q*(1.0/q.Mag()); 
+        qbar = qbar*(1.0/qbar.Mag());
       }
       else {
-        single_float_["MC_hadb_pt"]=b1.Pt();
-        single_float_["MC_hadb_eta"]=b1.Eta();
-        single_float_["MC_hadb_phi"]=b1.Phi();
-        single_float_["MC_hadb_E"]=b1.E();
-        single_float_["MC_lepb_pt"]=b2.Pt();
-        single_float_["MC_lepb_eta"]=b2.Eta();
-        single_float_["MC_lepb_phi"]=b2.Phi();
-        single_float_["MC_lepb_E"]=b2.E();
+        top = top*(1.0/top.Mag()); 
+        q = q*(1.0/q.Mag()); 
+        qbar = -1.0*qbar*(1.0/qbar.Mag());
       }
+      //find the unit bisectors
+      TVector3 bisector = (q+qbar)*(1.0/(q+qbar).Mag());
+      //find the CS angle
+      single_float_["MC_cstar"]=cos(top.Angle(bisector));
     }
-    //Calculate MC truth observables
-    //initialize the rotation to the identity
-    TLorentzRotation* R = new TLorentzRotation();
-    //Make the 4-vector of the ttbar pair, get its mass, calculate x_F
-    TLorentzVector Q = t_vec+tbar_vec;
-    double ttbar_mass=Q.Mag();
-    single_float_["MC_Mtt"]=ttbar_mass;
-    single_float_["MC_x_F"] = 2*Q.Pz()/13000.;
-    //defining the Px, Py,and Pz, and energies to boost into the ttbar rest frame
-    double Bx = -1*Q.Px()/Q.E(); 
-    double By = -1*Q.Py()/Q.E(); 
-    double Bz = -1*Q.Pz()/Q.E();
-    //Doing the boost
-    *R = R->Boost(Bx,By,Bz);
-    t_vec = (*R)*t_vec; tbar_vec = (*R)*tbar_vec;
-    q_vec = (*R)*q_vec; qbar_vec = (*R)*qbar_vec;
-    //Define normalized three-vectors for the top and protons in the ttbar rest frame
-    TVector3 top = t_vec.Vect(); 
-    TVector3 q = q_vec.Vect(); 
-    TVector3 qbar = qbar_vec.Vect(); 
-    //Normalize vectors (and flip the qbar direction)
-    if (single_float_["MC_part1_ID"]+single_float_["MC_part2_ID"]!=0 && q.Mag()>qbar.Mag()) {
-      top = top*(1.0/top.Mag()); 
-      q = -1.0*q*(1.0/q.Mag()); 
-      qbar = qbar*(1.0/qbar.Mag());
-    }
-    else {
-      top = top*(1.0/top.Mag()); 
-      q = q*(1.0/q.Mag()); 
-      qbar = -1.0*qbar*(1.0/qbar.Mag());
-    }
-    //find the unit bisectors
-    TVector3 bisector = (q+qbar)*(1.0/(q+qbar).Mag());
-    //find the CS angle
-    single_float_["MC_cstar"]=cos(top.Angle(bisector));
 
     double stop_mass = -9999, gluino_mass = -9999, lsp_mass = -9999;
     for (size_t i=0; i<ngen; ++i) {

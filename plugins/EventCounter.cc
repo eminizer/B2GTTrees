@@ -86,6 +86,7 @@ private:
       h_weightsign_->Fill(0);
       h_totweight_->Fill(0);
     } else {
+
       //Get the generated weight to apply to filling the histograms
       edm::Handle<float> evt_Gen_Weight;
       iEvent.getByLabel(edm::InputTag("extraVar", "evtGenWeight"), evt_Gen_Weight);
@@ -153,7 +154,8 @@ private:
       double M2_1 = MCt.Mag2();
       double M2_2 = MCtbar.Mag2();
       double beta=0.0;
-      if (*MCtruthM!=0. && (1. - 2.*(M2_1+M2_2)/((*MCtruthM)*(*MCtruthM)) + (M2_1-M2_2)*(M2_1-M2_2)/((*MCtruthM)*(*MCtruthM)*(*MCtruthM)*(*MCtruthM)))>0.) 
+      //std::cout<<"MC truth M = "<<*MCtruthM<<"\n"; //DEBUG
+      if (*MCtruthM!=-9999 && (1. - 2.*(M2_1+M2_2)/((*MCtruthM)*(*MCtruthM)) + (M2_1-M2_2)*(M2_1-M2_2)/((*MCtruthM)*(*MCtruthM)*(*MCtruthM)*(*MCtruthM)))>0.) 
         beta = sqrt(1. - 2.*(M2_1+M2_2)/((*MCtruthM)*(*MCtruthM)) + (M2_1-M2_2)*(M2_1-M2_2)/((*MCtruthM)*(*MCtruthM)*(*MCtruthM)*(*MCtruthM)));
       //depending on production mechanism
       if ((*MCp1ID)+(*MCp2ID)==0)
@@ -180,6 +182,7 @@ private:
       }
       //pdf/alpha_s weights are more complicated
       const std::vector<float> pdfWeights = * (pdfWeights_hand.product());
+      const std::vector<float> alphasWeights = * (alphasWeights_hand.product());
       size_t pdflen = pdfWeights.size();
       float sumweights  = 0.;
       float sumweights2 = 0.;
@@ -188,14 +191,26 @@ private:
         sumweights+=val;
         sumweights2+=val*val;
       }
-      float pdfmean = sumweights/pdflen;
-      float pdfunc = sqrt(abs(sumweights2)/pdflen-pdfmean*pdfmean);
-      const std::vector<float> alphasWeights = * (alphasWeights_hand.product());
-      float alphas_unc_up   = abs(alphasWeights[1]*0.75-1.);
-      float alphas_unc_down = abs(alphasWeights[0]*0.75-1.);
-      h_pdf_alphas_sf_->Fill(pdfmean,*evt_Gen_Weight);
-      h_pdf_alphas_sf_up_->Fill(pdfmean+sqrt(pdfunc*pdfunc+alphas_unc_up*alphas_unc_up),*evt_Gen_Weight);
-      h_pdf_alphas_sf_down_->Fill(pdfmean-sqrt(pdfunc*pdfunc+alphas_unc_down*alphas_unc_down),*evt_Gen_Weight);
+      if (pdflen>0) {
+        float pdfmean = sumweights/pdflen;
+        float pdfunc = sqrt(abs(sumweights2)/pdflen-pdfmean*pdfmean);
+        h_pdf_alphas_sf_->Fill(pdfmean,*evt_Gen_Weight);
+        if (alphasWeights.size()>1) {
+          float alphas_unc_up   = abs(alphasWeights[1]*0.75-1.);
+          float alphas_unc_down = abs(alphasWeights[0]*0.75-1.);
+          h_pdf_alphas_sf_up_->Fill(pdfmean+sqrt(pdfunc*pdfunc+alphas_unc_up*alphas_unc_up),*evt_Gen_Weight);
+          h_pdf_alphas_sf_down_->Fill(pdfmean-sqrt(pdfunc*pdfunc+alphas_unc_down*alphas_unc_down),*evt_Gen_Weight);
+        }
+        else {
+          h_pdf_alphas_sf_up_->Fill(pdfmean+pdfunc,*evt_Gen_Weight);
+          h_pdf_alphas_sf_down_->Fill(pdfmean-pdfunc,*evt_Gen_Weight);
+        }
+      }
+      else {
+        h_pdf_alphas_sf_->Fill(1,*evt_Gen_Weight);
+        h_pdf_alphas_sf_up_->Fill(1,*evt_Gen_Weight);
+        h_pdf_alphas_sf_down_->Fill(1,*evt_Gen_Weight);
+      }
     }
   }
 };

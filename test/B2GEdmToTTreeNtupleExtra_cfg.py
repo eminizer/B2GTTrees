@@ -591,29 +591,29 @@ process.extraVar = cms.EDProducer("B2GEdmExtraVarProducer",
 process.MuonCountFilter = cms.EDFilter("PatMuonCountFilter", 
     filter = cms.bool(True),
     src = cms.InputTag("slimmedMuons"),
-    cut = cms.string("pt>20. && abs(eta)<3.0"),
+    cut = cms.string("pt>45. && abs(eta)<3.0"),
     minNumber = cms.uint32(1)
 )
 ### Filter - Selects events with at least one electron with pt>20, |eta|<3.0
 process.ElectronCountFilter = cms.EDFilter("PatElectronCountFilter", 
     filter = cms.bool(True),
     src = cms.InputTag("slimmedElectrons"),
-    cut = cms.string("pt>20. && abs(eta)<3.0"),
+    cut = cms.string("pt>45. && abs(eta)<3.0"),
     minNumber = cms.uint32(1)
 )
-### Filter - Select only events with at least 1 AK4 jet with pt>20 and |eta|<3.0
-process.LeadingJetCountFilter = cms.EDFilter("PatJetCountFilter",  
+### Filter - Select only events with at least 4 AK4 jets with pt>20 and |eta|<3.0
+process.AK4JetCountFilter = cms.EDFilter("PatJetCountFilter",  
     filter = cms.bool(True),
     src = cms.InputTag("slimmedJets"),
     cut = cms.string("pt>20. && abs(eta)<3.0"),
-    minNumber = cms.uint32(1)
+    minNumber = cms.uint32(4)
 )
 ### Filter - Select only events with at least 2 AK4 jets with pt>20 and |eta|<3.0
-process.SubleadingJetCountFilter = cms.EDFilter("PatJetCountFilter",  
+process.AK8JetCountFilter = cms.EDFilter("PatJetCountFilter",  
     filter = cms.bool(True),
-    src = cms.InputTag("slimmedJets"),
-    cut = cms.string("pt>10. && abs(eta)<3.0"),
-    minNumber = cms.uint32(2)
+    src = cms.InputTag("slimmedJetsAK8"),
+    cut = cms.string("pt>175. && abs(eta)<3.0"),
+    minNumber = cms.uint32(1)
 )
 
 if genHtFilter:
@@ -647,17 +647,28 @@ process.EventCounter = cms.EDAnalyzer("EventCounter",
 )
 
 # Paths
-process.analysisPathMuon = cms.Path(
+process.analysisPathBoostedMuons = cms.Path(
     process.extraVar *
     process.EventCounter *
     process.MuonCountFilter * #muon filter
-    process.LeadingJetCountFilter * #leading jet filter
-    process.SubleadingJetCountFilter * #subleading jet filter
+    process.AK8JetCountFilter * #boosted AK8 jet filter
     process.B2GTTreeMaker)
-process.analysisPathElectron = cms.Path(
+process.analysisPathBoostedElectrons = cms.Path(
     process.extraVar *
     process.EventCounter *
     process.ElectronCountFilter * #electron filter
-    process.LeadingJetCountFilter * #leading jet filter
-    process.SubleadingJetCountFilter * #subleading jet filter
+    process.AK8JetCountFilter * #boosted AK8 jet filter
     process.B2GTTreeMaker)
+process.analysisPathResolvedMuons = cms.Path(
+    process.extraVar *
+    process.EventCounter *
+    process.MuonCountFilter * #muon filter
+    process.AK4JetCountFilter * #resolved AK4 jet filter
+    process.B2GTTreeMaker)
+process.analysisPathResolvedElectrons = cms.Path(
+    process.extraVar *
+    process.EventCounter *
+    process.ElectronCountFilter * #electron filter
+    process.AK4JetCountFilter * #resolved AK4 jet filter
+    process.B2GTTreeMaker)
+
