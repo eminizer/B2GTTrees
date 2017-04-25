@@ -35,8 +35,8 @@ public:
     edm::EDGetTokenT<float>(mayConsume<float>(edm::InputTag("extraVar", "MCpart1ID")));
     edm::EDGetTokenT<float>(mayConsume<float>(edm::InputTag("extraVar", "MCpart2ID")));
 
-    h_cstar_vs_beta_qqbar_ = fs->make<TH2D>("cstar_vs_beta_qqbar","c* vs #beta (q#bar{q} events); #beta; c*", 10,0.,1.,20,0.,1.);
-    h_cstar_vs_beta_gg_    = fs->make<TH2D>("cstar_vs_beta_gg","c* vs #beta (qg/gg events); #beta; c*", 10,0.,1.,20,0.,1.);
+    h_cstar_vs_beta_qqbar_ = fs->make<TH2D>("cstar_vs_beta_qqbar","c* vs #beta (q#bar{q} events); #beta; c*", 10,0.,1.,20,-1.,1.);
+    h_cstar_vs_beta_gg_    = fs->make<TH2D>("cstar_vs_beta_gg","c* vs #beta (qg/gg events); #beta; c*", 10,0.,1.,20,-1.,1.);
 
     edm::EDGetTokenT<float>(mayConsume<float>(edm::InputTag("extraVar", "MCtpt")));
     edm::EDGetTokenT<float>(mayConsume<float>(edm::InputTag("extraVar", "MCteta")));
@@ -47,15 +47,15 @@ public:
     edm::EDGetTokenT<float>(mayConsume<float>(edm::InputTag("extraVar", "MCtbarphi")));
     edm::EDGetTokenT<float>(mayConsume<float>(edm::InputTag("extraVar", "MCtbarE")));
 
-    h_mu_R_sf_up_   = fs->make<TH1D>("mu_R_sf_up",  ";mu_R_sf_up",   4,-1.,3.);
-    h_mu_R_sf_down_ = fs->make<TH1D>("mu_R_sf_down",";mu_R_sf_down", 4,-1.,3.);
-    h_mu_F_sf_up_   = fs->make<TH1D>("mu_F_sf_up",  ";mu_F_sf_up",   4,-1.,3.);
-    h_mu_F_sf_down_ = fs->make<TH1D>("mu_F_sf_down",";mu_F_sf_down", 4,-1.,3.);
-    h_scale_comb_sf_up_   = fs->make<TH1D>("scale_comb_sf_up",  ";scale_comb_sf_up",   4,-1.,3.);
-    h_scale_comb_sf_down_ = fs->make<TH1D>("scale_comb_sf_down",";scale_comb_sf_down", 4,-1.,3.);
-    h_pdf_alphas_sf_      = fs->make<TH1D>("pdf_alphas_sf",     ";pdf_alphas_sf",      4,-1.,3.);
-    h_pdf_alphas_sf_up_   = fs->make<TH1D>("pdf_alphas_sf_up",  ";pdf_alphas_sf_up",   4,-1.,3.);
-    h_pdf_alphas_sf_down_ = fs->make<TH1D>("pdf_alphas_sf_down",";pdf_alphas_sf_down", 4,-1.,3.);
+    h_mu_R_sf_up_   = fs->make<TH1D>("mu_R_sf_up",  ";mu_R_sf_up",   100,-1.,3.);
+    h_mu_R_sf_down_ = fs->make<TH1D>("mu_R_sf_down",";mu_R_sf_down", 100,-1.,3.);
+    h_mu_F_sf_up_   = fs->make<TH1D>("mu_F_sf_up",  ";mu_F_sf_up",   100,-1.,3.);
+    h_mu_F_sf_down_ = fs->make<TH1D>("mu_F_sf_down",";mu_F_sf_down", 100,-1.,3.);
+    h_scale_comb_sf_up_   = fs->make<TH1D>("scale_comb_sf_up",  ";scale_comb_sf_up",   100,-1.,3.);
+    h_scale_comb_sf_down_ = fs->make<TH1D>("scale_comb_sf_down",";scale_comb_sf_down", 100,-1.,3.);
+    h_pdf_alphas_sf_      = fs->make<TH1D>("pdf_alphas_sf",     ";pdf_alphas_sf",      100,-1.,3.);
+    h_pdf_alphas_sf_up_   = fs->make<TH1D>("pdf_alphas_sf_up",  ";pdf_alphas_sf_up",   100,-1.,3.);
+    h_pdf_alphas_sf_down_ = fs->make<TH1D>("pdf_alphas_sf_down",";pdf_alphas_sf_down", 100,-1.,3.);
 
     edm::EDGetTokenT<std::vector<float>>(mayConsume<std::vector<float>>(edm::InputTag("extraVar", "scaleWeights")));
     edm::EDGetTokenT<std::vector<float>>(mayConsume<std::vector<float>>(edm::InputTag("extraVar", "pdfWeights")));
