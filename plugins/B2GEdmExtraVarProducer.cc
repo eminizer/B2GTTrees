@@ -713,7 +713,7 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
     if (single_float_["MC_t_pt"]!=-9999 && single_float_["MC_tbar_pt"]!=-9999) {
       //Set the bs now that the other particles are all decided (well, if they're all decided)
       if (lepID!=0 && single_float_["MC_hadW_pt"]!=-9999.) {
-        if ((first_b_ID/lepID)>0) {
+        if ((first_b_ID*lepID)<0) {
           single_float_["MC_lepb_pt"]=b1.Pt();
           single_float_["MC_lepb_eta"]=b1.Eta();
           single_float_["MC_lepb_phi"]=b1.Phi();
