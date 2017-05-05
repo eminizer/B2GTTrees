@@ -158,10 +158,17 @@ private:
       if (*MCtruthM!=-9999 && (1. - 2.*(M2_1+M2_2)/((*MCtruthM)*(*MCtruthM)) + (M2_1-M2_2)*(M2_1-M2_2)/((*MCtruthM)*(*MCtruthM)*(*MCtruthM)*(*MCtruthM)))>0.) 
         beta = sqrt(1. - 2.*(M2_1+M2_2)/((*MCtruthM)*(*MCtruthM)) + (M2_1-M2_2)*(M2_1-M2_2)/((*MCtruthM)*(*MCtruthM)*(*MCtruthM)*(*MCtruthM)));
       //depending on production mechanism
-      if ((*MCp1ID)+(*MCp2ID)==0)
-        h_cstar_vs_beta_qqbar_->Fill(beta,*MCtruthcstar,*evt_Gen_Weight);
-      else
+      if ((*MCp1ID)+(*MCp2ID)==0) { //qqbar
+        h_cstar_vs_beta_qqbar_->Fill(beta,*MCtruthcstar,0.5*(*evt_Gen_Weight));
+        h_cstar_vs_beta_qqbar_->Fill(beta,-1.*(*MCtruthcstar),0.5*(*evt_Gen_Weight));
+      }
+      else if ((*MCp1ID)==21 && (*MCp2ID)==21) { //gg
+        h_cstar_vs_beta_gg_->Fill(beta,*MCtruthcstar,0.5*(*evt_Gen_Weight));
+        h_cstar_vs_beta_gg_->Fill(beta,-1.*(*MCtruthcstar),0.5*(*evt_Gen_Weight));
+      }
+      else if ((*MCp1ID)==21 || (*MCp2ID)==21) { //qg
         h_cstar_vs_beta_gg_->Fill(beta,*MCtruthcstar,*evt_Gen_Weight);
+      }
 
       //Save the scale/PDF/alpha_s weights
       edm::Handle<std::vector<float>>  scaleWeights_hand;
