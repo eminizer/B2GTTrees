@@ -6,7 +6,7 @@ import os
 # Set to false, and define your own lists (eg. comment out unused vairables)
 getVariablesFromConfig = False
 
-from Analysis.B2GAnaFW.b2gedmntuples_cff import puppimetFull, metFull, genPart, electrons, muons, photons, photonjets, jetsAK4CHS, jetsAK4Puppi, jetsAK8CHS, subjetsAK8CHS, jetsAK8Puppi, subjetsAK8Puppi, genJetsAK8, genJetsAK8SoftDrop, eventInfo # metNoHF, subjetsCmsTopTag off since 76X
+from Analysis.B2GAnaFW.b2gedmntuples_cff import puppimetFull, metFull, metFullClean, genPart, electrons, muons, photons, photonjets, jetsAK4CHS, jetsAK4Puppi, jetsAK8CHS, subjetsAK8CHS, jetsAK8Puppi, subjetsAK8Puppi, genJetsAK8, genJetsAK8SoftDrop, eventInfo # metNoHF, subjetsCmsTopTag off since 76X
 
 if getVariablesFromConfig:
     
@@ -19,6 +19,11 @@ if getVariablesFromConfig:
     for pset in metFull.variables:
         s = str(pset.tag).replace("cms.untracked.string('","").replace("')","")
         metFull_var.append(s)
+
+    metFullClean_var = cms.untracked.vstring()
+    for pset in metFullClean.variables:
+        s = str(pset.tag).replace("cms.untracked.string('","").replace("')","")
+        metFullClean_var.append(s)
 
     puppimetFull_var = cms.untracked.vstring()
     for pset in puppimetFull.variables:
@@ -95,7 +100,7 @@ if getVariablesFromConfig:
         s = str(pset.tag).replace("cms.untracked.string('","").replace("')","")
         genJetsAK8SoftDrop_var.append(s)
 else:
-    # Currrent B2GAnaFW ver: 11 Apr 2017 (CMSSW_8_0_X_V3 -PR74 +PR76)
+    # Currrent B2GAnaFW ver: v8.0.x_v3.1
     metNoHF_var = cms.untracked.vstring(
         "Pt",
         #"Px",
@@ -105,8 +110,9 @@ else:
         "uncorPhi",
         #"uncorSumEt",
     )
-    metFull_var      = copy.deepcopy(metNoHF_var)
-    puppimetFull_var = copy.deepcopy(metNoHF_var)
+    metFull_var          = copy.deepcopy(metNoHF_var)
+    metFullClean_var = copy.deepcopy(metNoHF_var)
+    puppimetFull_var     = copy.deepcopy(metNoHF_var)
     
     basicVars = cms.untracked.vstring(
         "Pt",
@@ -154,20 +160,20 @@ else:
         #'hasMatchedConVeto',
         'SCEta',
         'SCPhi',
-    #    'vidVeto',
-    #    'vidLoose',
-    #    'vidMedium',
-    #    'vidTight',
-    #    'vidHEEP',
-    #    'vidVetonoiso',
-    #    'vidLoosenoiso',
-    #    'vidMediumnoiso',
-    #    'vidTightnoiso',
-    #    'vidHEEPnoiso',
-    #    'vidMvaGPvalue',
-    #    'vidMvaGPcateg',
-    #    'vidMvaHZZvalue',
-    #    'vidMvaHZZcateg',
+        'vidVeto',
+        'vidLoose',
+        'vidMedium',
+        'vidTight',
+        'vidHEEP',
+        'vidVetonoiso',
+        'vidLoosenoiso',
+        'vidMediumnoiso',
+        'vidTightnoiso',
+        'vidHEEPnoiso',
+        'vidMvaGPvalue',
+        'vidMvaGPcateg',
+        'vidMvaHZZvalue',
+        'vidMvaHZZcateg',
     )
     
     muonVars = cms.untracked.vstring(
@@ -326,8 +332,8 @@ else:
     )
 
     jetToolboxAK8Vars = cms.untracked.vstring(
-    #    'DoubleBAK8',
-    #    'DoubleBCA15',
+        #'DoubleBAK8',
+        #'DoubleBCA15',
         'vSubjetIndex0',
         'vSubjetIndex1',
         #'vSubjetPuppiIndex0',
@@ -401,7 +407,7 @@ else:
     jetsAK8CHS_var     += jetVars
     jetsAK8CHS_var     += jetVarsForSys
     jetsAK8CHS_var     += jetToolboxAK8Vars
-    jetsAK8CHS_var     += photonjetVars
+    #jetsAK8CHS_var     += photonjetVars
     
     jetsAK8Puppi_var    = copy.deepcopy(basicVars)
     jetsAK8Puppi_var   += jetVars
@@ -491,8 +497,14 @@ B2GTTreeMaker = cms.EDAnalyzer("B2GTTreeMaker",
         cms.PSet(
             label = cms.untracked.string("metFull"),
             prefix_in = metFull.prefix,
-            prefix_out = cms.untracked.string("met_"),
+            prefix_out = cms.untracked.string("met_MuCleanOnly_"), # It is the "Out of the box" MET
             vectorF = metFull_var,
+        ),
+        cms.PSet(
+            label = cms.untracked.string("metFullClean"), # This is the mu/eg cleaned MET + recalc JEC
+            prefix_in = metFullClean.prefix,
+            prefix_out = cms.untracked.string("met_"),
+            vectorF = metFullClean_var,
         ),
         #cms.PSet(
         #    label = cms.untracked.string("puppimetFull"),

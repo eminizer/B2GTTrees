@@ -2,22 +2,28 @@
 ============
 INFO: Filter and Convert B2G edm ntuples to TTree ntuples
 
+N.B (v8.0.x_v3.1_May10 only): This is a private tag for incporporating the latest MET corrections for EG issues and
+switching to SUSY recommended EA values for ele/muon, otherwise use TAG: v8.0.x_v3.1_May09
+I also switch to the Spring15 electron IDs privately in the beginning of Analysis/B2GTTrees/test/B2GEdmToTTreeNtupleExtra_cfg.py
+(Edit them if necessary to specify for your analysis)
+Everything else is the same as in B2GAnaFW tag v8.0.x_v3.1
+
 Checkout Instructions (with B2GAnaFW)
 =====================================
 
 ```Shell
 export CMSSW_GIT_REFERENCE=/cvmfs/cms.cern.ch/cmssw.git.daily
 export SCRAM_ARCH=slc6_amd64_gcc530
-cmsrel CMSSW_8_0_26_patch2
-cd CMSSW_8_0_26_patch2/src
+cmsrel CMSSW_8_0_26_patch1
+cd CMSSW_8_0_26_patch1/src
 cmsenv
 git cms-init
 git cms-merge-topic -u cms-btv-pog:BoostedDoubleSVTaggerV4-WithWeightFiles-v1_from-CMSSW_8_0_21
 git cms-merge-topic cms-met:METRecipe_8020
 git cms-merge-topic ikrav:egm_id_80X_v3_photons
 git clone https://github.com/cms-jet/JetToolbox.git JMEAnalysis/JetToolbox -b jetToolbox_80X_V3
-git clone https://github.com/jkarancs/B2GAnaFW.git  Analysis/B2GAnaFW  -b v8.0.x_v3.1_pre_PR76_Apr12
-git clone https://github.com/jkarancs/B2GTTrees.git Analysis/B2GTTrees -b v8.0.x_v3.1_pre_PR76_Apr12
+git clone https://github.com/jkarancs/B2GAnaFW.git  Analysis/B2GAnaFW -b v8.0.x_v3.1_May10
+git clone https://github.com/jkarancs/B2GTTrees.git Analysis/B2GTTrees -b v8.0.x_v3.1_May10
 scram b -j 20
 ```
 
@@ -67,13 +73,13 @@ Examples:
    * Make TTree ntuples from MINIAOD(SIM) on grid
 ```Shell
 cd $CMSSW_BASE/src/Analysis/B2GTTrees/test/crab3
-merged create Apr12 B2GAnaFW_80X_V3p1_pre_PR76_Apr12 MINIAODv2_80X_Apr12_input.txt cross_sections.txt T2_HU_Budapest /store/user/jkarancs/SusyAnalysis/B2GTTreeNtuple/Apr12
-merged submit Apr12
-merged status Apr12
-merged status Apr12 --run #if you want automatic job handling, otherwise it prints resubmit commands
-merged download Apr12 /data/gridout/jkarancs/SusyAnalysis/B2G/TTreeNtuple --run
-merged find_missing Apr12
-merged checkup Apr12
-merged report Apr12 --run
-merged get_lumi Apr12
+merged create May10 B2GAnaFW_80X_V3p1_May10 MINIAODv2_80X_May10_input.txt cross_sections.txt T2_HU_Budapest /store/user/jkarancs/SusyAnalysis/B2GTTreeNtuple/May10
+merged submit May10
+merged status May10
+merged status May10 --run #if you want automatic job handling, otherwise it prints resubmit commands
+merged download May10 /data/gridout/jkarancs/SusyAnalysis/B2G/TTreeNtuple --run
+merged find_missing May10
+merged checkup May10
+merged report May10 --run
+merged get_lumi May10
 ```
