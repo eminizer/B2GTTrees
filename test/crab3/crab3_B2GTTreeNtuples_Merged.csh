@@ -4,6 +4,9 @@
 # Tool: multicrab-like tool to create, submit, get status of crab3 tasks for B2GEdmNtuples
 #       When jobs finish, we can also get report and download all output files locally
 
+unalias ls
+unalias rm
+
 echo "Usage:"                                                    >! Usage.txt
 echo "  source crab3_B2GEdmNtuples_Merged.csh <cmd> <TASKNAME> " >> Usage.txt
 echo "  there is a default safety mechanism for each command"    >> Usage.txt
@@ -73,7 +76,7 @@ set TASKDIR="B2G_merged_"$TASKNAME
 # Aliases
 if ( ! (-e $PWD/source_parallel.csh) || ! (-e $PWD/se_util.csh) ) then
     echo "Please run this script from the same directory where\nsource_parallel.csh and se_util.csh is or copy them here" 
-    rm Usage.txt; exit
+    rm Usage.txt; source ~/.tcshrc; exit
 endif
 # script that takes another script as argument and runs n lines in parallel
 # used by se_util.csh
@@ -201,105 +204,110 @@ else if ( `echo $cmd | grep "submit" | wc -l` ) then
 else if ( `echo $cmd | grep "status" | wc -l` ) then
     set N=`cat $TASKDIR/input_datasets.txt | wc -l`
     foreach i ( `seq 1 $N` )
-	set short=`sed -n "$i"p $TASKDIR/input_datasets.txt | awk '{ print $1 }'`
-	if ( $recov ) set short=`echo "$short""_recovery"`
-	set dir=`echo $TASKDIR"/crab_"$short`
-	if ( ! -f $dir.py && $recov ) continue
-	if ( ! -d $dir ) then
-	    set Status="MISSING"
-	else
-	    if ( ! -d $TASKDIR/status/$short ) mkdir -p $TASKDIR/status/$short
-	    # Check if task was completed already
-	    if ( `ls $TASKDIR/status/$short | grep ".txt" | wc -l` ) then
-		set status_txt=`ls -tr $TASKDIR/status/$short/*.txt | tail -1`
-		set Status=`grep "Status on the scheduler:" $status_txt | awk '{ print $NF }'`
-		if ( $Status != "COMPLETED" ) then
-		    crab status -d $dir >! $TASKDIR/status/$short/$DATE.txt
-		endif
+        set short=`sed -n "$i"p $TASKDIR/input_datasets.txt | awk '{ print $1 }'`
+        if ( $recov ) set short=`echo "$short""_recovery"`
+        set dir=`echo $TASKDIR"/crab_"$short`
+        if ( ! -f $dir.py && $recov ) continue
+        if ( ! -d $dir ) then
+            set Status="MISSING"
+        else
+            if ( ! -d $TASKDIR/status/$short ) mkdir -p $TASKDIR/status/$short
+            # Check if task was completed already
+            if ( `ls $TASKDIR/status/$short | grep ".txt" | wc -l` ) then
+#echo "Found status directory for shortname $short" #DEBUG ]
+                set status_txt=`ls -tr $TASKDIR/status/$short/*.txt | tail -1`
+#echo "firstgrep of file status_txt=$status_txt" #DEBUG
+                set Status=`grep "Status on the scheduler:" $status_txt | awk '{ print $NF }'`
+#echo "Status is $Status" #DEBUG
+                if ( $Status != "COMPLETED" ) then
+#echo "Getting status from crab" #DEBUG
+                    crab status -d $dir >! $TASKDIR/status/$short/$DATE.txt
+                endif
             else
-		crab status -d $dir >! $TASKDIR/status/$short/$DATE.txt
-	    endif
-	    set status_txt=`ls -tr $TASKDIR/status/$short/*.txt | tail -1`
-	    set Status=`grep "Status on the scheduler:" $status_txt | awk '{ print $NF }'`
-	    if ( $Status == "" && `ls -tr $TASKDIR/status/$short/*.txt | head -n -1 | wc -l` != 0 ) then
+#echo "Failed to find status directory for shortname $short, getting status from CRAB" #DEBUG
+                crab status -d $dir >! $TASKDIR/status/$short/$DATE.txt
+            endif
+            set status_txt=`ls -tr $TASKDIR/status/$short/*.txt | tail -1`
+            set Status=`grep "Status on the scheduler:" $status_txt | awk '{ print $NF }'`
+            if ( $Status == "" && `ls -tr $TASKDIR/status/$short/*.txt | head -n -1 | wc -l` != 0 ) then
                 set status_txt=`ls -tr $TASKDIR/status/$short/*.txt | head -n -1 | tail -1`
                 set Status=`if ( $status_txt != "" ) grep "Status on the scheduler:" $status_txt | awk '{ print $NF }'`
-	    endif
-	endif
+            endif
+        endif
         printf "%-70s %s\n" $dir $Status
-	set nfail=`grep "failed.*\%.*\(" $status_txt | wc -l`
-	if ( $Status == "MISSING" ) then
-	    echo "  -> Task is not found (not yet submitted?). Submitting ...\n"
-	    eval_or_echo "crab submit -c $dir.py"
-	    echo
-	else if ( `grep "Cannot find \.requestcache" $status_txt | wc -l` ) then
-	    echo "  -> Task submission failed - No requestcache. Delete and submit again ...\n"
-	    eval_or_echo "rm -rf $dir"
-	    eval_or_echo "crab submit -c $dir.py"
-	    echo
-	else if ( `echo $Status | grep SUBMITFAILED | wc -l` && `grep "does not generate any job" $status_txt | wc -l` != 0 ) then
-	    echo "  -> Task submission failed, because dataset is outside of the JSON file ...\n"
-	    echo "rm -rf $dir"
-	    echo
-	else if ( `echo $Status | grep SUBMITFAILED | wc -l` && `find $dir -maxdepth 0 -type d -mmin +120 | wc -l` && `grep "\%.*\(" $status_txt | wc -l` == 0 ) then
-	    echo "  -> Task submission failed after more than 2 hours and no jobs are running. Delete and submit again ...\n"
-	    eval_or_echo "rm -rf $dir"
-	    eval_or_echo "crab submit -c $dir.py"
-	    echo
-	else if ( `grep "The server answered with an error" $status_txt | wc -l` ) then
-	    echo "  -> Server error. Do nothing ...\n"
-	#else if ( `echo $Status | grep NEW | wc -l` && `find $dir -maxdepth 0 -type d -mmin +120 | wc -l` ) then
-	#    echo "  -> Task stuck in NEW state for more than 2 hours. Kill, delete and submit again ...\n"
-	#    crab kill -d $dir
-	#    rm -rf $dir
-	#    crab submit -c $dir.py
-	#    echo
-	#else if ( `echo $Status | grep SUBMITTED | wc -l` && `grep "not yet bootstrapped" $status_txt | wc -l` && `find $dir -maxdepth 0 -type d -mmin +120 | wc -l` ) then
-	#    echo "  -> Task stuck in bootstrapping for more than 2 hours. Kill, delete and submit again ...\n"
-	#    crab kill -d $dir
-	#    rm -rf $dir
-	#    crab submit -c $dir.py
-	#    echo
+        set nfail=`grep "failed.*\%.*\(" $status_txt | wc -l`
+        if ( $Status == "MISSING" ) then
+            echo "  -> Task is not found (not yet submitted?). Submitting ...\n"
+            eval_or_echo "crab submit -c $dir.py"
+            echo
+        else if ( `grep "Cannot find \.requestcache" $status_txt | wc -l` ) then
+            echo "  -> Task submission failed - No requestcache. Delete and submit again ...\n"
+            eval_or_echo "rm -rf $dir"
+            eval_or_echo "crab submit -c $dir.py"
+            echo
+        else if ( `echo $Status | grep SUBMITFAILED | wc -l` && `grep "does not generate any job" $status_txt | wc -l` != 0 ) then
+            echo "  -> Task submission failed, because dataset is outside of the JSON file ...\n"
+            echo "rm -rf $dir"
+            echo
+        else if ( `echo $Status | grep SUBMITFAILED | wc -l` && `find $dir -maxdepth 0 -type d -mmin +120 | wc -l` && `grep "\%.*\(" $status_txt | wc -l` == 0 ) then
+            echo "  -> Task submission failed after more than 2 hours and no jobs are running. Delete and submit again ...\n"
+            eval_or_echo "rm -rf $dir"
+            eval_or_echo "crab submit -c $dir.py"
+            echo
+        else if ( `grep "The server answered with an error" $status_txt | wc -l` ) then
+            echo "  -> Server error. Do nothing ...\n"
+        #else if ( `echo $Status | grep NEW | wc -l` && `find $dir -maxdepth 0 -type d -mmin +120 | wc -l` ) then
+        #    echo "  -> Task stuck in NEW state for more than 2 hours. Kill, delete and submit again ...\n"
+        #    crab kill -d $dir
+        #    rm -rf $dir
+        #    crab submit -c $dir.py
+        #    echo
+        #else if ( `echo $Status | grep SUBMITTED | wc -l` && `grep "not yet bootstrapped" $status_txt | wc -l` && `find $dir -maxdepth 0 -type d -mmin +120 | wc -l` ) then
+        #    echo "  -> Task stuck in bootstrapping for more than 2 hours. Kill, delete and submit again ...\n"
+        #    crab kill -d $dir
+        #    rm -rf $dir
+        #    crab submit -c $dir.py
+        #    echo
         else if ( `echo $Status | grep COMPLETED | wc -l` == 0 ) then
-	    grep "%.*\(.*\)" $status_txt
+            grep "%.*\(.*\)" $status_txt
             if ( $nfail != 0 ) then
-		set extra_arg=""
-		if ( `grep "jobs failed with exit code 50660" $status_txt | wc -l` != 0 ) set extra_arg="$extra_arg --maxmemory=3000"
-		if ( `grep "jobs failed with exit code 50664" $status_txt | wc -l` != 0 ) set extra_arg="$extra_arg --maxjobruntime=1900"
-		echo "  -> Resubmitting failed jobs ...\n"
-		eval_or_echo "crab resubmit -d $dir $extra_arg"
-		echo
-	    else
-		# Get more info about tasks not failing but near completion
-	        set percent=`grep "finished" $status_txt | head -1 | sed "s;\.; ;g" | awk '{ print $2 }'`
-	        if ( $percent == "status:" ) set percent=`grep "finished" $status_txt | head -1 | sed "s;\.; ;g" | awk '{ print $4 }'`
-	        if ( $percent == "" ) set percent=0
-	        if ( $percent > 90 ) then
-		    echo "More info about task:"
-                    set SE_SITE=`grep SE_SITE $TASKDIR/config.txt | awk '{ print $2 }'`
-                    set SE_USERDIR=`grep SE_USERDIR $TASKDIR/config.txt | awk '{ print $2 }'`
-	            set in_dataset=`sed -n "$i"p $TASKDIR/input_datasets.txt | awk '{ print $2 }'`
-	            set primary_dataset=`echo $in_dataset | sed "s;/; ;g" | awk '{ print $1 }'`
-                    set pubname=`grep outputDatasetTag $TASKDIR/crab_$short.py | sed "s;'; ;g" | awk '{ print $3 }'`
-                    set timestamp=`grep "Task name" $status_txt | sed "s;\:; ;g" | awk '{ print $3 }'`
-	            set njobs=`grep ".*\%.*\(.*\)" $status_txt | tail -1 | sed "s;/; ;g;s;); ;g"| awk '{ print $NF }'`
-	            touch missing.txt
-                    foreach thousand ( `se ls $SE_SITE":"$SE_USERDIR/$primary_dataset/$pubname/$timestamp` )
-	                set BEG=`expr $thousand \* 1000`
-	                set END=`expr $BEG + 999`
-	                if ( "$BEG" == 0 ) set BEG=1
-	                if ( $njobs < $END ) set END=$njobs
-                        set missing=`se mis $SE_SITE":"$SE_USERDIR/$primary_dataset/$pubname/$timestamp/$thousand $BEG $END`
-	                if ( `echo $missing | grep '^$' | wc -l` != 1 ) echo $missing >> missing.txt
-                    end
-	            if ( `cat missing.txt | wc -l` ) then
-	                echo -n "-  Found missing jobs: "; cat missing.txt
-	            else
-	                echo "-  No jobs are missing on the SE"
-	            endif
-	            rm missing.txt
-	        endif
-	    endif
+                set extra_arg=""
+                if ( `grep "jobs failed with exit code 50660" $status_txt | wc -l` != 0 ) set extra_arg="$extra_arg --maxmemory=3000"
+                if ( `grep "jobs failed with exit code 50664" $status_txt | wc -l` != 0 ) set extra_arg="$extra_arg --maxjobruntime=1900"
+                echo "  -> Resubmitting failed jobs ...\n"
+                eval_or_echo "crab resubmit -d $dir $extra_arg"
+                echo
+            else
+                # Get more info about tasks not failing but near completion
+                set percent=`grep "finished" $status_txt | head -1 | sed "s;\.; ;g" | awk '{ print $2 }'`
+                if ( $percent == "status:" ) set percent=`grep "finished" $status_txt | head -1 | sed "s;\.; ;g" | awk '{ print $4 }'`
+                if ( $percent == "" ) set percent=0
+#if ( $percent > 90 ) then
+#echo "More info about task:"
+#set SE_SITE=`grep SE_SITE $TASKDIR/config.txt | awk '{ print $2 }'`
+#set SE_USERDIR=`grep SE_USERDIR $TASKDIR/config.txt | awk '{ print $2 }'`
+#set in_dataset=`sed -n "$i"p $TASKDIR/input_datasets.txt | awk '{ print $2 }'`
+#set primary_dataset=`echo $in_dataset | sed "s;/; ;g" | awk '{ print $1 }'`
+#set pubname=`grep outputDatasetTag $TASKDIR/crab_$short.py | sed "s;'; ;g" | awk '{ print $3 }'`
+#set timestamp=`grep "Task name" $status_txt | sed "s;\:; ;g" | awk '{ print $3 }'`
+#set njobs=`grep ".*\%.*\(.*\)" $status_txt | tail -1 | sed "s;/; ;g;s;); ;g"| awk '{ print $NF }'`
+#touch missing.txt
+#foreach thousand ( `se ls $SE_SITE":"$SE_USERDIR/$primary_dataset/$pubname/$timestamp` )
+#set BEG=`expr $thousand \* 1000`
+#set END=`expr $BEG + 999`
+#if ( "$BEG" == 0 ) set BEG=1
+#if ( $njobs < $END ) set END=$njobs
+#set missing=`se mis $SE_SITE":"$SE_USERDIR/$primary_dataset/$pubname/$timestamp/$thousand $BEG $END`
+#if ( `echo $missing | grep '^$' | wc -l` != 1 ) echo $missing >> missing.txt
+#end
+#if ( `cat missing.txt | wc -l` ) then
+#echo -n "-  Found missing jobs: "; cat missing.txt
+#else
+#echo "-  No jobs are missing on the SE"
+#endif
+#rm missing.txt
+#endif
+            endif
         endif
     end
 
@@ -644,4 +652,5 @@ else if ( `echo $cmd | grep "make_twiki" | wc -l` ) then
 endif
 rm Usage.txt
 
+source ~/.tcshrc
 
