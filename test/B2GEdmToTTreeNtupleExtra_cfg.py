@@ -589,18 +589,18 @@ process.extraVar = cms.EDProducer("B2GEdmExtraVarProducer",
     ),
 )
 
-### Filter - Selects events with at least one muon with pt>45, |eta|<3.0
+### Filter - Selects events with at least one muon with pt>25, |eta|<3.0
 process.MuonCountFilter = cms.EDFilter("PatMuonCountFilter", 
     filter = cms.bool(True),
     src = cms.InputTag("slimmedMuons"),
-    cut = cms.string("pt>45. && abs(eta)<3.0"),
+    cut = cms.string("pt>25. && abs(eta)<3.0"),
     minNumber = cms.uint32(1)
 )
-### Filter - Selects events with at least one electron with pt>45, |eta|<3.0
+### Filter - Selects events with at least one electron with pt>25, |eta|<3.0
 process.ElectronCountFilter = cms.EDFilter("PatElectronCountFilter", 
     filter = cms.bool(True),
     src = cms.InputTag("slimmedElectrons"),
-    cut = cms.string("pt>45. && abs(eta)<3.0"),
+    cut = cms.string("pt>25. && abs(eta)<3.0"),
     minNumber = cms.uint32(1)
 )
 ### Filter - Select only events with at least 4 AK4 jets with pt>20 and |eta|<3.0
