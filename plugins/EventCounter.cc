@@ -37,6 +37,8 @@ public:
 
     h_cstar_vs_beta_qqbar_ = fs->make<TH2D>("cstar_vs_beta_qqbar","c* vs #beta (q#bar{q} events); #beta; c*", 10,0.,1.,20,-1.,1.);
     h_cstar_vs_beta_gg_    = fs->make<TH2D>("cstar_vs_beta_gg","c* vs #beta (qg/gg events); #beta; c*", 10,0.,1.,20,-1.,1.);
+    h_cstar_vs_beta_qqbar_usym_ = fs->make<TH2D>("cstar_vs_beta_qqbar_usym","c* vs #beta (q#bar{q} events) (unsymmetrized); #beta; c*", 10,0.,1.,20,-1.,1.);
+    h_cstar_vs_beta_gg_usym_    = fs->make<TH2D>("cstar_vs_beta_gg_usym","c* vs #beta (qg/gg events) (unsymmetrized); #beta; c*", 10,0.,1.,20,-1.,1.);
 
     edm::EDGetTokenT<float>(mayConsume<float>(edm::InputTag("extraVar", "MCtpt")));
     edm::EDGetTokenT<float>(mayConsume<float>(edm::InputTag("extraVar", "MCteta")));
@@ -57,6 +59,10 @@ public:
     h_pdf_alphas_sf_up_   = fs->make<TH1D>("pdf_alphas_sf_up",  ";pdf_alphas_sf_up",   100,-1.,3.);
     h_pdf_alphas_sf_down_ = fs->make<TH1D>("pdf_alphas_sf_down",";pdf_alphas_sf_down", 100,-1.,3.);
 
+    edm::EDGetTokenT<float>(mayConsume<float>(edm::InputTag("extraVar", "evttopptrw")));
+
+    h_top_pt_rw_   = fs->make<TH1D>("top_pt_rw",  ";top_pt_rw",   150,-3.,3.);
+
     edm::EDGetTokenT<std::vector<float>>(mayConsume<std::vector<float>>(edm::InputTag("extraVar", "scaleWeights")));
     edm::EDGetTokenT<std::vector<float>>(mayConsume<std::vector<float>>(edm::InputTag("extraVar", "pdfWeights")));
     edm::EDGetTokenT<std::vector<float>>(mayConsume<std::vector<float>>(edm::InputTag("extraVar", "alphasWeights")));
@@ -72,6 +78,8 @@ private:
   TH2D* h_initial_parton_IDs_;
   TH2D* h_cstar_vs_beta_qqbar_;
   TH2D* h_cstar_vs_beta_gg_;
+  TH2D* h_cstar_vs_beta_qqbar_usym_;
+  TH2D* h_cstar_vs_beta_gg_usym_;
   TH1D* h_mu_R_sf_up_;
   TH1D* h_mu_R_sf_down_;
   TH1D* h_mu_F_sf_up_;
@@ -81,6 +89,7 @@ private:
   TH1D* h_pdf_alphas_sf_;
   TH1D* h_pdf_alphas_sf_up_;
   TH1D* h_pdf_alphas_sf_down_;
+  TH1D* h_top_pt_rw_;
   void analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
     if ( iEvent.eventAuxiliary().isRealData() ) {
       h_weightsign_->Fill(0);
@@ -163,15 +172,18 @@ private:
         //std::cout<<"qqbar"; //DEBUG
         h_cstar_vs_beta_qqbar_->Fill(beta,*MCtruthcstar,0.5*(*evt_Gen_Weight));
         h_cstar_vs_beta_qqbar_->Fill(beta,-1.*(*MCtruthcstar),0.5*(*evt_Gen_Weight));
+        h_cstar_vs_beta_qqbar_usym_->Fill(beta,*MCtruthcstar,*evt_Gen_Weight);
       }
       else if ((*MCp1ID)==21 && (*MCp2ID)==21) { //gg
         //std::cout<<"gg"; //DEBUG
         h_cstar_vs_beta_gg_->Fill(beta,*MCtruthcstar,0.5*(*evt_Gen_Weight));
         h_cstar_vs_beta_gg_->Fill(beta,-1.*(*MCtruthcstar),0.5*(*evt_Gen_Weight));
+        h_cstar_vs_beta_gg_usym_->Fill(beta,*MCtruthcstar,*evt_Gen_Weight);
       }
       else if ((*MCp1ID)==21 || (*MCp2ID)==21) { //qg
         //std::cout<<"qg"; //DEBUG
         h_cstar_vs_beta_gg_->Fill(beta,*MCtruthcstar,*evt_Gen_Weight);
+        h_cstar_vs_beta_gg_usym_->Fill(beta,*MCtruthcstar,*evt_Gen_Weight);
       }
 
       //Save the scale/PDF/alpha_s weights
@@ -221,6 +233,14 @@ private:
         h_pdf_alphas_sf_->Fill(1,*evt_Gen_Weight);
         h_pdf_alphas_sf_up_->Fill(1,*evt_Gen_Weight);
         h_pdf_alphas_sf_down_->Fill(1,*evt_Gen_Weight);
+      }
+
+      //Save the histogram of top pT reweights
+      edm::Handle<float>  topptrw;
+      iEvent.getByLabel(edm::InputTag("extraVar", "evttopptrw"), topptrw);
+      //std::cout<<"top_pt_rw = "<<*topptrw<<"\n"; //DEBUG
+      if (*topptrw!=-9999) {
+        h_top_pt_rw_->Fill(*topptrw,*evt_Gen_Weight);
       }
     }
   }
