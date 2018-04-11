@@ -269,6 +269,8 @@ process.extraVar = cms.EDProducer("B2GEdmExtraVarProducer",
         "Flag_duplicateMuons",
         "Flag_noBadMuons",
         # Add trigger names below (these are automatically picked up)
+        # Photon
+        "HLT_Photon175",
         # Single Jet
     #    "HLT_PFJet40",
     #    "HLT_PFJet60",
@@ -396,6 +398,8 @@ process.extraVar = cms.EDProducer("B2GEdmExtraVarProducer",
         "HLT_Ele200_CaloIdVT_GsfTrkIdT",
         "HLT_Ele250_CaloIdVT_GsfTrkIdT",
         "HLT_Ele300_CaloIdVT_GsfTrkIdT",
+        #Lepton + 1 Jet
+        "HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165",
         # Lepton + 2 Jet
         "HLT_Mu30_eta2p1_PFJet150_PFJet50",
         "HLT_Mu40_eta2p1_PFJet200_PFJet50",
