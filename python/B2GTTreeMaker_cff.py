@@ -466,14 +466,14 @@ B2GTTreeMaker = cms.EDAnalyzer("B2GTTreeMaker",
         #    vectorF = cms.untracked.vstring("BitTree"),
         #),
         # Vertices
-        #cms.PSet(
-        #    label = cms.untracked.string("vertexInfo"),
-        #    prefix_in = cms.untracked.string(""),
-        #    prefix_out = cms.untracked.string("vtx_"),
-        #    singleI = cms.untracked.vstring("npv"),
-        #    vectorI = cms.untracked.vstring("ndof"),
-        #    vectorF = cms.untracked.vstring("z","rho","chi", "vx", "vy", "vz"),
-        #),
+        cms.PSet(
+            label = cms.untracked.string("vertexInfo"),
+            prefix_in = cms.untracked.string(""),
+            prefix_out = cms.untracked.string("vtx_"),
+            singleI = cms.untracked.vstring("npv"),
+            vectorI = cms.untracked.vstring("ndof"),
+            vectorF = cms.untracked.vstring("z","rho","chi", "vx", "vy", "vz"),
+        ),
         # MET Filters
         cms.PSet(
             label = cms.untracked.string("BadPFMuonFilter"),
