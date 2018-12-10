@@ -627,10 +627,11 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
     size_t ngen =  h_floats_["gen_Pt"]->size();
     TLorentzVector b1, b2, q_vec, qbar_vec, t_vec, tbar_vec;
     bool found_first_parton = false;
+    bool found_first_W_sub = false;
     float lepID = 0;
     float first_b_ID = 0;
     //Find MC truth variables
-    //std::cout << "------------------------------\n"; //DEBUG
+    // std::cout << "------------------------------\n"; //DEBUG
     for (size_t i=0; i<ngen; ++i) {
       //Get all the relevant stuff
       float thisID = h_floats_["gen_ID"]->at(i);
@@ -638,12 +639,12 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
       float Mom1ID = h_floats_["gen_Mom1ID"]->at(i);
       float Dau0ID = h_floats_["gen_Dau0ID"]->at(i);
       float Dau1ID = h_floats_["gen_Dau1ID"]->at(i);
-    //  std::cout<<"["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+      //std::cout<<"["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
       //Initial partons
       if (Mom1ID==-900. && abs(Dau0ID)==6 && abs(Dau1ID)==6) {
         //first parton
         if (!found_first_parton) {
-          //std::cout << "first initial parton : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+          // std::cout << "first initial parton : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
           single_float_["MC_part1_factor"] = (h_floats_["gen_Eta"]->at(i)>0) ? 1.0 : -1.0;
           single_float_["MC_part1_ID"]=thisID;
           found_first_parton=true;
@@ -652,14 +653,14 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
         }
         //second parton
         else {
-          //std::cout << "second initial parton : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+          // std::cout << "second initial parton : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
           single_float_["MC_part2_factor"] = (h_floats_["gen_Eta"]->at(i)>0) ? 1.0 : -1.0;
           single_float_["MC_part2_ID"]=thisID;
         }
       }
       //top
       else if (thisID == 6 && Mom0ID==thisID && (Dau0ID==5 || Dau1ID==5) && (Dau0ID==24 || Dau1ID==24)) {
-        //std::cout << "top : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+        // std::cout << "top : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
         t_vec.SetPtEtaPhiE(h_floats_["gen_Pt"]->at(i), h_floats_["gen_Eta"]->at(i), h_floats_["gen_Phi"]->at(i), h_floats_["gen_E"]->at(i));
         single_float_["MC_t_pt"]=t_vec.Pt();
         single_float_["MC_t_eta"]=t_vec.Eta();
@@ -668,7 +669,7 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
       }
       //antitop
       else if (thisID == -6 && Mom0ID==thisID && (Dau0ID==-5 || Dau1ID==-5) && (Dau0ID==-24 || Dau1ID==-24)) {
-        //std::cout << "antitop : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+        // std::cout << "antitop : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
         tbar_vec.SetPtEtaPhiE(h_floats_["gen_Pt"]->at(i), h_floats_["gen_Eta"]->at(i), h_floats_["gen_Phi"]->at(i), h_floats_["gen_E"]->at(i));
         single_float_["MC_tbar_pt"]=tbar_vec.Pt();
         single_float_["MC_tbar_eta"]=tbar_vec.Eta();
@@ -679,7 +680,7 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
       else if (abs(Mom0ID)==24 && abs(thisID)>10 && abs(thisID)<19) { //lepton IDs are 11-18
         //std::cout<<"["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
         if (abs(thisID)%2==1) { //electron, muon, or tau
-          //std::cout << "lepton : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+          // std::cout << "lepton : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
         //  std::cout<<"lepton\n" //DEBUG
           single_float_["MC_lep_pt"]=h_floats_["gen_Pt"]->at(i);
           single_float_["MC_lep_eta"]=h_floats_["gen_Eta"]->at(i);
@@ -689,7 +690,7 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
           single_float_["MC_lep_ID"]=lepID;
         }
         else {
-          //std::cout << "neutrino : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+          // std::cout << "neutrino : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
         //  std::cout<<"neutrino\n" //DEBUG
           single_float_["MC_nu_pt"]=h_floats_["gen_Pt"]->at(i);
           single_float_["MC_nu_eta"]=h_floats_["gen_Eta"]->at(i);
@@ -699,21 +700,41 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
       }
       //hadronic W
       else if ((Mom0ID==thisID || abs(Mom0ID)==6) && abs(thisID)==24 && abs(Dau0ID)<6 && abs(Dau1ID)<6) {
-        //std::cout << "hadronic W : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+        // std::cout << "hadronic W : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
         single_float_["MC_hadW_pt"]=h_floats_["gen_Pt"]->at(i);
         single_float_["MC_hadW_eta"]=h_floats_["gen_Eta"]->at(i);
         single_float_["MC_hadW_phi"]=h_floats_["gen_Phi"]->at(i);
         single_float_["MC_hadW_E"]=h_floats_["gen_E"]->at(i);
       }
+      //hadronic W decay products
+      else if (abs(Mom0ID)==24 && abs(thisID)<6) { //anything but a top quark from a W
+        // first particle
+        if (!found_first_W_sub) {
+          // std::cout << "first hadronic W decay product: ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+          single_float_["MC_hadWs1_pt"]=h_floats_["gen_Pt"]->at(i);
+          single_float_["MC_hadWs1_eta"]=h_floats_["gen_Eta"]->at(i);
+          single_float_["MC_hadWs1_phi"]=h_floats_["gen_Phi"]->at(i);
+          single_float_["MC_hadWs1_E"]=h_floats_["gen_E"]->at(i);
+          found_first_W_sub=true;
+        }
+        // second particle
+        else {
+          // std::cout << "second hadronic W decay product: ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+          single_float_["MC_hadWs2_pt"]=h_floats_["gen_Pt"]->at(i);
+          single_float_["MC_hadWs2_eta"]=h_floats_["gen_Eta"]->at(i);
+          single_float_["MC_hadWs2_phi"]=h_floats_["gen_Phi"]->at(i);
+          single_float_["MC_hadWs2_E"]=h_floats_["gen_E"]->at(i);
+        }
+      }
       //bs from tops
       else if (abs(Mom0ID)==6 and abs(thisID)==5) {
         if (first_b_ID==0) {
-          //std::cout << "first b : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+          // std::cout << "first b : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
           b1.SetPtEtaPhiE(h_floats_["gen_Pt"]->at(i), h_floats_["gen_Eta"]->at(i), h_floats_["gen_Phi"]->at(i), h_floats_["gen_E"]->at(i));
           first_b_ID = h_floats_["gen_ID"]->at(i);
         }
         else {
-          //std::cout << "second b : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
+          // std::cout << "second b : ["<<Mom0ID<<" + "<<Mom1ID<<"] = "<<thisID<<" -> ("<<Dau0ID<<" + "<<Dau1ID<<"), fip="<<found_first_parton<<"\n"; //DEBUG
           b2.SetPtEtaPhiE(h_floats_["gen_Pt"]->at(i), h_floats_["gen_Eta"]->at(i), h_floats_["gen_Phi"]->at(i), h_floats_["gen_E"]->at(i));
         }
       }
