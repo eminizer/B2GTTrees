@@ -59,9 +59,10 @@ public:
     h_pdf_alphas_sf_up_   = fs->make<TH1D>("pdf_alphas_sf_up",  ";pdf_alphas_sf_up",   100,-1.,3.);
     h_pdf_alphas_sf_down_ = fs->make<TH1D>("pdf_alphas_sf_down",";pdf_alphas_sf_down", 100,-1.,3.);
 
-    edm::EDGetTokenT<float>(mayConsume<float>(edm::InputTag("extraVar", "evttopptrw")));
+    edm::EDGetTokenT<float>(mayConsume<float>(edm::InputTag("extraVar", "evttopptrwv1")));
 
-    h_top_pt_rw_   = fs->make<TH1D>("top_pt_rw",  ";top_pt_rw",   150,-3.,3.);
+    h_top_pt_rw_v1_   = fs->make<TH1D>("top_pt_rw_v1",  ";top_pt_rw_v1",   150,-3.,3.);
+    h_gen_atop_vs_top_pt_ = fs->make<TH2D>("gen_atop_vs_top_pt",";gen top pT; gen antitop pT",300,0.,1500.,300,0.,1500.);
 
     edm::EDGetTokenT<std::vector<float>>(mayConsume<std::vector<float>>(edm::InputTag("extraVar", "scaleWeights")));
     edm::EDGetTokenT<std::vector<float>>(mayConsume<std::vector<float>>(edm::InputTag("extraVar", "pdfWeights")));
@@ -89,7 +90,8 @@ private:
   TH1D* h_pdf_alphas_sf_;
   TH1D* h_pdf_alphas_sf_up_;
   TH1D* h_pdf_alphas_sf_down_;
-  TH1D* h_top_pt_rw_;
+  TH1D* h_top_pt_rw_v1_;
+  TH2D* h_gen_atop_vs_top_pt_;
   void analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
     if ( iEvent.eventAuxiliary().isRealData() ) {
       h_weightsign_->Fill(0);
@@ -236,12 +238,15 @@ private:
       }
 
       //Save the histogram of top pT reweights
-      edm::Handle<float>  topptrw;
-      iEvent.getByLabel(edm::InputTag("extraVar", "evttopptrw"), topptrw);
-      //std::cout<<"top_pt_rw = "<<*topptrw<<"\n"; //DEBUG
-      if (*topptrw!=-9999) {
-        h_top_pt_rw_->Fill(*topptrw,*evt_Gen_Weight);
+      edm::Handle<float>  topptrwv1;
+      iEvent.getByLabel(edm::InputTag("extraVar", "evttopptrwv1"), topptrwv1);
+      //std::cout<<"top_pt_rw_v1 = "<<*topptrwv1<<"\n"; //DEBUG
+      if (*topptrwv1!=-9999) {
+        h_top_pt_rw_v1_->Fill(*topptrwv1,*evt_Gen_Weight);
       }
+
+      //and the 2D histogram of the generated top pTs
+      h_gen_atop_vs_top_pt_->Fill(*MCtbarpt,*MCtpt,*evt_Gen_Weight);
     }
   }
 };

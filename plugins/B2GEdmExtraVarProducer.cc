@@ -380,7 +380,7 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
   single_float_["evt_XSec"] = isData_ ? -9999 : cross_section_;                        /* evt_Xsec */
   single_float_["evt_Gen_Weight"] = -9999;                                             /* evt_Gen_Weight */
   single_float_["evt_Gen_Ht"] = -9999;                                                 /* evt_Gen_Ht */
-  single_float_["evt_top_pt_rw"] = -9999;                                              /* evt_top_pt_rw */
+  single_float_["evt_top_pt_rw_v1"] = -9999;                                           /* evt_top_pt_rw_v1 */
   
   // NLO negative weights, see:
   // https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideDataFormatGeneratorInterface
@@ -768,7 +768,7 @@ void B2GEdmExtraVarProducer::calculate_variables(edm::Event const& iEvent, edm::
         }
       }
       //Calculate Top pT reweighting factor
-      single_float_["evt_top_pt_rw"]=TMath::Sqrt(TMath::Exp(0.0615-0.0005*single_float_["MC_t_pt"])*TMath::Exp(0.0615-0.0005*single_float_["MC_tbar_pt"]));
+      single_float_["evt_top_pt_rw_v1"]=TMath::Sqrt(TMath::Exp(0.0615-0.0005*single_float_["MC_t_pt"])*TMath::Exp(0.0615-0.0005*single_float_["MC_tbar_pt"]));
       //Calculate MC truth observables
       //initialize the rotation to the identity
       TLorentzRotation* R = new TLorentzRotation();
